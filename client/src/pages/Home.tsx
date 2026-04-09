@@ -19,6 +19,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import AnalysisReport from "@/components/AnalysisReport";
+import { trpc } from "@/lib/trpc";
 
 // Demo data for showcase when no webhook is connected
 const DEMO_DATA = {
@@ -85,63 +86,38 @@ const DEMO_DATA = {
   },
 };
 
-const WEBHOOK_URL = "https://aamarr71.app.n8n.cloud/webhook/analyst";
-
 export default function Home() {
   const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
-  const handleAnalyze = async () => {
-    if (!url.trim()) return;
-    setLoading(true);
-    setError(null);
-    setAnalysisData(null);
-
-    try {
-      const response = await fetch(`${WEBHOOK_URL}?url=${encodeURIComponent(url.trim())}`);
-      if (!response.ok) throw new Error(`Fehler: ${response.status}`);
-      const text = await response.text();
-
-      // Try to parse the response - it might be wrapped in an array or have extra fields
-      let parsed: any;
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        throw new Error("Ungültige Antwort vom Server");
-      }
-
-      // Handle n8n response format (might be array, might have nested output)
-      if (Array.isArray(parsed)) {
-        parsed = parsed[0];
-      }
-      // If the response has an output field with message content
-      if (parsed?.output?.[0]?.content?.[0]?.text) {
-        parsed = JSON.parse(parsed.output[0].content[0].text);
-      }
-      // If the response has a message field
-      if (parsed?.message?.content) {
-        parsed = JSON.parse(parsed.message.content);
-      }
-
-      setAnalysisData(parsed);
-
-      // Scroll to report
+  const analyzeMutation = trpc.analysis.analyze.useMutation({
+    onSuccess: (data) => {
+      setAnalysisData(data);
+      setIsLoading(false);
       setTimeout(() => {
         reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 200);
-    } catch (err: any) {
-      setError(err.message || "Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.");
-    } finally {
-      setLoading(false);
-    }
+    },
+    onError: (err) => {
+      setAnalysisError(err.message || "Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.");
+      setIsLoading(false);
+    },
+  });
+
+  const handleAnalyze = () => {
+    if (!url.trim()) return;
+    setIsLoading(true);
+    setAnalysisError(null);
+    setAnalysisData(null);
+    analyzeMutation.mutate({ url: url.trim() });
   };
 
   const handleDemo = () => {
     setAnalysisData(DEMO_DATA);
-    setError(null);
+    setAnalysisError(null);
     setTimeout(() => {
       reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 200);
@@ -201,21 +177,21 @@ export default function Home() {
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="url"
-                    placeholder="Immobilien-Link einfügen (z.B. zakaryan.at/de/immobilie/...)"
+                    placeholder="Immobilien-Link einfügen (z.B. immobilien.at/de/objekt/...)"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
                     className="pl-10 h-12 text-base bg-card border-border font-mono text-sm"
-                    disabled={loading}
+                    disabled={isLoading}
                   />
                 </div>
                 <Button
                   onClick={handleAnalyze}
-                  disabled={loading || !url.trim()}
+                  disabled={isLoading || !url.trim()}
                   className="h-12 px-6 text-sm font-semibold tracking-wide"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {loading ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                       Analysiere...
@@ -266,7 +242,7 @@ export default function Home() {
 
       {/* Error Display */}
       <AnimatePresence>
-        {error && (
+        {analysisError && (
           <motion.div
             className="container"
             initial={{ opacity: 0, y: -10 }}
@@ -275,7 +251,7 @@ export default function Home() {
           >
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700">{analysisError}</p>
             </div>
           </motion.div>
         )}
