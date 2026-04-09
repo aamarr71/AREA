@@ -1,5 +1,5 @@
 /*
- * ZARA Swiss Precision Design
+ * AREA Swiss Precision Design
  * Home Page: Input field, analysis trigger, report display
  * Asymmetric layout: Left sidebar input, right report area
  */
@@ -22,7 +22,7 @@ import AnalysisReport from "@/components/AnalysisReport";
 
 // Demo data for showcase when no webhook is connected
 const DEMO_DATA = {
-  meta: { analyst: "ZARA v3.0", analyse_datum: "2026-04-09", konfidenz_score: 0.95 },
+  meta: { analyst: "AREA v3.0", analyse_datum: "2026-04-09", konfidenz_score: 0.95 },
   stufe_1_extraktion: {
     objekt_id: "6145",
     titel: "CHARMANTE 4-ZIMMER-WOHNUNG IN 1180 WIEN – BALKON, STADT- UND GRÜNBLICK!",
@@ -174,7 +174,7 @@ export default function Home() {
                 <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                   <Zap className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <span className="font-mono text-sm tracking-[0.2em] uppercase text-muted-foreground">ZARA v3.0</span>
+                <span className="font-mono text-sm tracking-[0.2em] uppercase text-muted-foreground">AREA v3.0</span>
               </div>
               <h1
                 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-4"
@@ -320,7 +320,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border py-6 print:hidden">
         <div className="container flex items-center justify-between text-xs text-muted-foreground">
-          <span className="font-mono">ZARA v3.0 — Zakaryan Automated Real-Estate Analyst</span>
+          <span className="font-mono">AREA v3.0 — Automated Real-Estate Analyst</span>
           <span>Powered by KI-Automatisierung</span>
         </div>
       </footer>

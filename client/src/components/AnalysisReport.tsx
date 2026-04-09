@@ -1,5 +1,5 @@
 /*
- * ZARA Swiss Precision Design
+ * AREA Swiss Precision Design
  * AnalysisReport: Renders the JSON analysis as a readable report with Ampelsystem
  * Colors: Rot (#E63946) kritisch, Amber (#F4A261) mittel, Teal (#2A9D8F) OK
  */

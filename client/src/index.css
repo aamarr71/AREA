@@ -47,7 +47,7 @@
 
 :root {
   --radius: 0.5rem;
-  /* ZARA Swiss Precision Palette */
+  /* AREA Swiss Precision Palette */
   --background: oklch(0.98 0.002 80);
   --foreground: oklch(0.18 0.02 260);
   --card: oklch(1 0 0);
