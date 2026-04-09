@@ -1,7 +1,7 @@
-# ZARA – Design Brainstorm
+# AREA – Design Brainstorm
 
 ## Kontext
-ZARA ist ein KI-Immobilien-Exposé-Analyst für Makler. Das Interface muss professionell, vertrauenswürdig und effizient wirken. Der Nutzer (Makler) gibt einen Link ein und bekommt einen detaillierten Report mit Ampelsystem.
+AREA ist ein KI-Immobilien-Exposé-Analyst für Makler. Das Interface muss professionell, vertrauenswürdig und effizient wirken. Der Nutzer (Makler) gibt einen Link ein und bekommt einen detaillierten Report mit Ampelsystem.
 
 ---
 

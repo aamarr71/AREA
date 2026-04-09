@@ -10,3 +10,4 @@
 - [x] Push database schema
 - [x] Test full flow (frontend → backend → n8n → report)
 - [x] Save checkpoint and deliver to user
+- [x] Alle verbleibenden ZARA-Referenzen im Projekt durch AREA ersetzen (Metadaten, Titel, package.json)
