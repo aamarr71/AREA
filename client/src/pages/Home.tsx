@@ -134,7 +134,7 @@ export default function Home() {
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `url(https://d2xsxph8kpxj0f.cloudfront.net/310519663350010070/22JJ5JVjD4oWBr593xia7T/zara-pattern-9DhFNiShm6NWvtJ2uNHbbD.webp)`,
+            backgroundImage: `none`,
             backgroundSize: "600px",
             backgroundRepeat: "repeat",
           }}

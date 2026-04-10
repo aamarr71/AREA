@@ -1,31 +1,17 @@
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { ENV } from "./_core/env";
 import { z } from "zod";
 import axios from "axios";
 
-const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || "https://aamarr71.app.n8n.cloud/webhook/analyst";
-
 export const appRouter = router({
-  system: systemRouter,
-  auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
-    }),
-  }),
+  health: publicProcedure.query(() => ({ ok: true, service: "AREA" })),
 
   analysis: router({
     analyze: publicProcedure
       .input(z.object({ url: z.string().url() }))
       .mutation(async ({ input }) => {
         try {
-          const response = await axios.get(N8N_WEBHOOK_URL, {
+          const response = await axios.get(ENV.n8nWebhookUrl, {
             params: { url: input.url },
             timeout: 180000, // 3 minutes – GPT-4.1 analysis can take time
           });
@@ -39,7 +25,6 @@ export const appRouter = router({
 
           // Helper: safely parse JSON, fixing common LLM quirks like 6_500
           const safeParse = (str: string) => {
-            // Strip markdown code fences if present
             let clean = str.trim();
             if (clean.startsWith("```")) {
               clean = clean.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
@@ -48,8 +33,6 @@ export const appRouter = router({
             clean = clean.replace(/(\d)_(\d)/g, "$1$2");
             return JSON.parse(clean);
           };
-
-          // Try to extract the analysis JSON from various n8n/OpenAI response shapes:
 
           // Shape 1: OpenAI Responses API (gpt-4.1) — output[].content[].text
           const responsesText = data?.output?.[0]?.content?.[0]?.text;
@@ -64,34 +47,31 @@ export const appRouter = router({
             return safeParse(chatText);
           }
 
-          // Shape 3: n8n simplified output — direct text field
+          // Shape 3: n8n simplified — direct text field
           if (typeof data?.text === "string") {
             return safeParse(data.text);
           }
 
-          // Shape 4: n8n langchain node — output as string
+          // Shape 4: n8n langchain — output as string
           if (typeof data?.output === "string") {
             return safeParse(data.output);
           }
 
-          // Shape 5: Already parsed JSON with expected fields
+          // Shape 5: already parsed JSON
           if (data?.meta && data?.stufe_1_extraktion) {
             return data;
           }
 
-          // Shape 6: Async webhook response (the bug!) — no analysis data
+          // Shape 6: async webhook misconfiguration
           if (data?.message === "Workflow was started") {
             throw new Error(
               "n8n Webhook ist auf asynchron konfiguriert. Bitte Webhook-Node auf 'When Last Node Finishes' stellen."
             );
           }
 
-          // Nothing matched — log and throw
           console.error("[AREA] Unbekanntes n8n Response-Format:", JSON.stringify(data).slice(0, 500));
           throw new Error("Unerwartetes Response-Format von n8n. Bitte Workflow prüfen.");
-
         } catch (error: any) {
-          // Don't wrap our own errors
           if (error?.message?.startsWith("n8n") || error?.message?.startsWith("Unerwartet")) {
             throw error;
           }
