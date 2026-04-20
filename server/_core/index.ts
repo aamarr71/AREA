@@ -1,19 +1,14 @@
 import "dotenv/config";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
-import path from "path";
-import { fileURLToPath } from "url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { setupVite } from "./vite";
+import { setupVite, serveStatic } from "./vite";
 import { ENV } from "./env";
 import { logger, generateRequestId } from "../middleware/logger";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Regex for static assets that bypass maintenance mode
 const STATIC_ASSET_RE = /\.(js|css|png|ico|svg|woff2?|ttf|map)$/i;
@@ -96,11 +91,7 @@ async function startServer() {
   if (!ENV.isProduction) {
     await setupVite(app, server);
   } else {
-    const staticPath = path.resolve(__dirname, "..", "..", "dist", "public");
-    app.use(express.static(staticPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(staticPath, "index.html"));
-    });
+    serveStatic(app);
   }
 
   server.listen(ENV.port, () => {

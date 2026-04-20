@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import pino from "pino";
 import { ENV } from "../_core/env";
 
