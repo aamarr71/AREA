@@ -17,6 +17,9 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Trust Railway's proxy so req.ip is correct and rate-limit doesn't crash on IPv6
+  app.set("trust proxy", 1);
+
   // 1. Maintenance mode kill-switch (before everything else)
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (!ENV.maintenanceMode) return next();
