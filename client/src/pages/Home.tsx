@@ -295,9 +295,12 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border py-6 print:hidden">
-        <div className="container flex items-center justify-between text-xs text-muted-foreground">
+        <div className="container flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="font-mono">AREA v3.0 — Automated Real-Estate Analyst</span>
-          <span>Powered by KI-Automatisierung</span>
+          <div className="flex items-center gap-4">
+            <a href="/impressum" className="hover:text-foreground transition-colors">Impressum</a>
+            <a href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</a>
+          </div>
         </div>
       </footer>
     </div>
