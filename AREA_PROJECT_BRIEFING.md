@@ -285,3 +285,41 @@ RATE_LIMIT_ANALYSIS=    # Default: 15 (Analysen pro Minute pro IP)
 - **Start Command:** pnpm start
 - **Auto-Deploy:** Bei Push auf standalone
 - **trust proxy:** Aktiviert (`app.set("trust proxy", 1)`) für korrekte IP-Erkennung hinter Railway's Reverse-Proxy
+
+---
+
+## 15. Session-Management & Checkpoint-System
+
+**Problem:** Claude-Sessions haben begrenzten Kontext. Bei Session-Wechsel geht Arbeitswissen verloren.
+
+**Lösung — 4-Schichten-System:**
+
+| Schicht | Was | Wann aktualisiert |
+|---------|-----|-------------------|
+| 1. `AREA_PROJECT_BRIEFING.md` | Architektur, Tech-Stack, Phasen, Repo-Struktur | Bei fundamentalen Änderungen (Phase abgeschlossen, Architektur-Entscheidung) |
+| 2. Claude Memories | Projektstand, Merkliste, Konventionen (kurze Stichpunkte) | Laufend durch Claude |
+| 3. Checkpoint-Prompt | Kompakte Zusammenfassung des aktuellen Arbeitsstands | Am Ende jeder Session oder auf Anfrage ("Checkpoint bitte") |
+| 4. Repo-Code | Die ultimative Wahrheit — was tatsächlich existiert | Bei jedem Push |
+
+**Checkpoint-Format (immer gleich):**
+
+```
+## Checkpoint [Datum]
+### Wo wir stehen
+- Phase X, Schritt Y von Z
+- Was ist fertig, was ist halb fertig
+### Was gerade offen ist
+- Aktuelle Bugs, offene Entscheidungen
+### Nächster Schritt
+- Was als nächstes gebaut/gefixt werden muss
+### Kontext für nächste Session
+- Relevante Commits, Dateien, Zeilen
+```
+
+**Regeln:**
+- Claude ist in Alarmbereitschaft für das Session-Ende. Bevor die Session endet, wird ein Checkpoint erstellt.
+- Amar kann jederzeit "Checkpoint bitte" sagen → Claude erstellt einen.
+- Bei neuer Session: Amar gibt die Projekt-Briefing (Projektdatei) + den letzten Checkpoint als ersten Prompt.
+- Bei unerwartetem Session-Ende ohne Checkpoint: Der Repo-Stand ist die Wahrheit. Die neue Session liest den Code und rekonstruiert.
+
+**Single Source of Truth:** Diese Datei (`AREA_PROJECT_BRIEFING.md`) ist die einzige permanente Projektdatei. Separate Handoff-MDs oder DeepSeek-Briefings werden bei Bedarf live aus dieser Datei extrahiert, NICHT separat gepflegt.
