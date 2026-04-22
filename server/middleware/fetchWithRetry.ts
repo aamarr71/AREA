@@ -2,16 +2,20 @@ import axios from "axios";
 import { logger } from "./logger";
 
 export class AnalysisTimeoutError extends Error {
-  constructor() {
+  detail: string;
+  constructor(detail = "ETIMEDOUT after 2 attempts") {
     super("Analyse vorübergehend nicht verfügbar. Bitte in 2 Minuten erneut versuchen.");
     this.name = "AnalysisTimeoutError";
+    this.detail = detail;
   }
 }
 
 export class AnalysisWebhookError extends Error {
-  constructor(_detail?: string) {
+  detail: string;
+  constructor(detail = "unknown") {
     super("Analyse-Service nicht erreichbar.");
     this.name = "AnalysisWebhookError";
+    this.detail = detail;
   }
 }
 
@@ -76,9 +80,13 @@ export async function fetchWithRetry(
     }
   }
 
-  // Both attempts failed — throw typed error
+  // Both attempts failed — throw typed error with technical detail
   if (failureReason === "timeout") {
-    throw new AnalysisTimeoutError();
+    const code = lastError?.code ?? "ETIMEDOUT";
+    throw new AnalysisTimeoutError(`${code} after 2 attempts (45s timeout)`);
   }
-  throw new AnalysisWebhookError();
+  const status = lastError?.response?.status;
+  const code = lastError?.code;
+  const detail = status ? `HTTP ${status}` : code ? `${code}` : "network error";
+  throw new AnalysisWebhookError(detail);
 }

@@ -5,6 +5,7 @@
  */
 
 import { useState, useRef } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -298,8 +299,8 @@ export default function Home() {
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="font-mono">AREA v3.0 — Automated Real-Estate Analyst</span>
           <div className="flex items-center gap-4">
-            <a href="/impressum" className="hover:text-foreground transition-colors">Impressum</a>
-            <a href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</a>
+            <Link href="/impressum" className="hover:text-foreground transition-colors">Impressum</Link>
+            <Link href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</Link>
           </div>
         </div>
       </footer>

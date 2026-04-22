@@ -149,8 +149,9 @@ export const appRouter = router({
           const message = error?.response?.data?.message
             || error?.message
             || "Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.";
-          logger.error({ msg: "analysis_error", errorType: error?.name, message });
-          recordAnalysis({ url: input.url, timestamp: Date.now(), durationMs: Date.now() - startMs, success: false, cacheHit: false, error: message });
+          const errorDetail = error?.detail ? `${error.name}: ${error.detail}` : message;
+          logger.error({ msg: "analysis_error", errorType: error?.name, message, detail: error?.detail });
+          recordAnalysis({ url: input.url, timestamp: Date.now(), durationMs: Date.now() - startMs, success: false, cacheHit: false, error: errorDetail });
           throw new Error(message);
         }
       }),

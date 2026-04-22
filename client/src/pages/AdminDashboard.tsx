@@ -222,7 +222,7 @@ export default function AdminDashboard() {
                     <tr key={i} className="hover:bg-muted/20 transition-colors">
                       <td className="p-3 font-mono text-xs max-w-[200px] truncate">{err.url}</td>
                       <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{formatTimestamp(err.timestamp)}</td>
-                      <td className="p-3 text-xs text-destructive max-w-[300px] truncate">{err.error}</td>
+                      <td className="p-3 text-xs text-destructive max-w-[300px] break-words">{err.error}</td>
                     </tr>
                   ))}
                 </tbody>
