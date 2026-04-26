@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,9 @@ import {
   Shield,
   BarChart3,
   AlertTriangle,
+  LogOut,
+  History,
+  Settings,
 } from "lucide-react";
 import AnalysisReport from "@/components/AnalysisReport";
 import { trpc } from "@/lib/trpc";
@@ -88,11 +91,23 @@ const DEMO_DATA = {
 };
 
 export default function Home() {
+  const [, setLocation] = useLocation();
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
+
+  const utils = trpc.useUtils();
+  const meQuery = trpc.auth.me.useQuery();
+  const me = meQuery.data;
+
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+      setLocation("/login");
+    },
+  });
 
   const analyzeMutation = trpc.analysis.analyze.useMutation({
     onSuccess: (data) => {
@@ -130,6 +145,42 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* Top Nav (only shown when logged in) */}
+      {me && (
+        <header className="border-b border-border print:hidden">
+          <div className="container flex items-center justify-between h-12">
+            <span className="font-mono text-xs tracking-[0.15em] uppercase text-muted-foreground">AREA</span>
+            <div className="flex items-center gap-1">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="text-xs">
+                  <History className="w-3.5 h-3.5 mr-1.5" />
+                  Meine Analysen
+                </Button>
+              </Link>
+              {me.role === "admin" && (
+                <Link href="/amar-stats">
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    <Settings className="w-3.5 h-3.5 mr-1.5" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
+              <span className="text-xs text-muted-foreground hidden sm:inline mx-2">{me.name}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="text-xs"
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </header>
+      )}
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div

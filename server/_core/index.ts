@@ -9,11 +9,21 @@ import { createContext } from "./context";
 import { setupVite, serveStatic } from "./vite";
 import { ENV } from "./env";
 import { logger, generateRequestId } from "../middleware/logger";
+import { sessionMiddleware } from "../middleware/session";
+import { runMigrations } from "../db/migrate";
 
 // Regex for static assets that bypass maintenance mode
 const STATIC_ASSET_RE = /\.(js|css|png|ico|svg|woff2?|ttf|map)$/i;
 
 async function startServer() {
+  // Apply pending DB migrations before accepting traffic.
+  // Idempotent: drizzle tracks applied migrations in `__drizzle_migrations`.
+  if (ENV.databaseUrl) {
+    await runMigrations();
+  } else {
+    logger.warn({ msg: "db_skipped", reason: "DATABASE_URL not set" });
+  }
+
   const app = express();
   const server = createServer(app);
 
@@ -81,7 +91,10 @@ async function startServer() {
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-  // 7. tRPC API
+  // 7. Session middleware (Postgres-backed, signed cookie)
+  app.use(sessionMiddleware);
+
+  // 8. tRPC API
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -90,7 +103,7 @@ async function startServer() {
     })
   );
 
-  // 8. Frontend (Vite dev or static production)
+  // 9. Frontend (Vite dev or static production)
   if (!ENV.isProduction) {
     await setupVite(app, server);
   } else {
