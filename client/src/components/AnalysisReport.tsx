@@ -22,6 +22,13 @@ import {
 } from "lucide-react";
 import { t, tAmpel, type Lang } from "../lib/translations";
 import { trpc } from "../lib/trpc";
+import ProgressBar from "./ProgressBar";
+
+const TRANSLATE_PHASES = [
+  { label: "Texte werden übersetzt...", until: 50 },
+  { label: "Übersetzung wird finalisiert...", until: 99 },
+  { label: "Fertig!", until: 100 },
+];
 
 interface AnalysisData {
   meta?: {
@@ -139,6 +146,7 @@ export default function AnalysisReport({ data, analysisId }: { data: AnalysisDat
   const [lang, setLang] = useState<Lang>("de");
   const [translatedData, setTranslatedData] = useState<AnalysisData | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isTranslationComplete, setIsTranslationComplete] = useState(false);
   const [translateError, setTranslateError] = useState(false);
 
   const locale = lang === "de" ? "de-AT" : "en-GB";
@@ -157,12 +165,17 @@ export default function AnalysisReport({ data, analysisId }: { data: AnalysisDat
 
   const translateMutation = trpc.analysis.translate.useMutation({
     onSuccess: (translated) => {
-      setTranslatedData(translated as AnalysisData);
-      setIsTranslating(false);
-      setTranslateError(false);
+      setIsTranslationComplete(true);
+      setTimeout(() => {
+        setTranslatedData(translated as AnalysisData);
+        setIsTranslating(false);
+        setIsTranslationComplete(false);
+        setTranslateError(false);
+      }, 500);
     },
     onError: () => {
       setIsTranslating(false);
+      setIsTranslationComplete(false);
       setTranslateError(true);
     },
   });
@@ -226,26 +239,43 @@ export default function AnalysisReport({ data, analysisId }: { data: AnalysisDat
           </div>
           <div className="flex items-center gap-4">
             {/* Language toggle */}
-            <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
-              <button
-                onClick={() => handleSetLang("de")}
-                className={`px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${
-                  lang === "de" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >DE</button>
-              <button
-                onClick={() => handleSetLang("en")}
-                disabled={isTranslating}
-                className={`px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${
-                  lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                } disabled:opacity-50`}
-              >EN</button>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
+                <button
+                  onClick={() => handleSetLang("de")}
+                  className={`px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${
+                    lang === "de" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >DE</button>
+                <button
+                  onClick={() => handleSetLang("en")}
+                  disabled={isTranslating}
+                  className={`px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${
+                    lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  } disabled:opacity-50`}
+                >{isTranslating ? "..." : "EN"}</button>
+              </div>
+              {translateError && (
+                <span className="text-[10px] text-red-500 font-mono">Translation API unavailable</span>
+              )}
             </div>
             {data.meta?.konfidenz_score !== undefined && (
               <KonfidenzRing score={data.meta.konfidenz_score} label={t("konfidenz", lang)} />
             )}
           </div>
         </div>
+
+        {/* Translation Progress Bar */}
+        {isTranslating && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <ProgressBar
+              isActive={isTranslating}
+              isComplete={isTranslationComplete}
+              phases={TRANSLATE_PHASES}
+              speed="fast"
+            />
+          </div>
+        )}
 
         {/* Quick Status Badges */}
         <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">

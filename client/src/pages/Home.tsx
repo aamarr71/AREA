@@ -23,7 +23,15 @@ import {
   Settings,
 } from "lucide-react";
 import AnalysisReport from "@/components/AnalysisReport";
+import ProgressBar from "@/components/ProgressBar";
 import { trpc } from "@/lib/trpc";
+
+const ANALYSE_PHASES = [
+  { label: "Exposé wird geladen...", until: 30 },
+  { label: "Inhalte werden analysiert...", until: 60 },
+  { label: "Report wird erstellt...", until: 99 },
+  { label: "Fertig!", until: 100 },
+];
 
 // Demo data for showcase when no webhook is connected
 const DEMO_DATA = {
@@ -94,6 +102,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [analysisId, setAnalysisId] = useState<number | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -113,22 +122,28 @@ export default function Home() {
   const analyzeMutation = trpc.analysis.analyze.useMutation({
     onSuccess: (data) => {
       const { _areaId, ...reportData } = data as any;
-      setAnalysisData(reportData);
-      setAnalysisId(_areaId ?? null);
-      setIsLoading(false);
+      setIsAnalysisComplete(true);
       setTimeout(() => {
-        reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 200);
+        setAnalysisData(reportData);
+        setAnalysisId(_areaId ?? null);
+        setIsLoading(false);
+        setIsAnalysisComplete(false);
+        setTimeout(() => {
+          reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 200);
+      }, 600);
     },
     onError: (err) => {
       setAnalysisError(err.message || "Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.");
       setIsLoading(false);
+      setIsAnalysisComplete(false);
     },
   });
 
   const handleAnalyze = () => {
     if (!url.trim()) return;
     setIsLoading(true);
+    setIsAnalysisComplete(false);
     setAnalysisError(null);
     setAnalysisData(null);
     setAnalysisId(null);
@@ -312,6 +327,20 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Analysis Progress Bar */}
+      {isLoading && (
+        <div className="container mt-6">
+          <div className="bg-card border border-border rounded-lg p-5 max-w-xl">
+            <ProgressBar
+              isActive={isLoading}
+              isComplete={isAnalysisComplete}
+              phases={ANALYSE_PHASES}
+              speed="normal"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Report Section */}
       <AnimatePresence>
