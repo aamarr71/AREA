@@ -257,32 +257,42 @@ export const analysisRouter = router({
       };
     }),
 
-  /** Translate a stored analysis result to English via DeepSeek. */
+  /** Translate an analysis result to English via DeepSeek.
+   *  Accepts either a DB-backed analysisId (own analyses only) or raw inlineData (e.g. Demo). */
   translate: protectedProcedure
     .input(z.object({
-      analysisId: z.number().int().positive(),
+      analysisId: z.number().int().positive().optional(),
+      inlineData: z.any().optional(),
       targetLang: z.literal("en"),
     }))
     .mutation(async ({ ctx, input }) => {
-      const row = await db.query.analyses.findFirst({
-        where: eq(analyses.id, input.analysisId),
-      });
-      if (!row || row.userId !== ctx.userId) {
-        throw new Error("Analyse nicht gefunden.");
-      }
-      if (!row.result) {
-        throw new Error("Kein Analyse-Ergebnis vorhanden.");
+      let data: any;
+
+      if (input.analysisId) {
+        const row = await db.query.analyses.findFirst({
+          where: eq(analyses.id, input.analysisId),
+        });
+        if (!row || row.userId !== ctx.userId) {
+          throw new Error("Analyse nicht gefunden.");
+        }
+        if (!row.result) {
+          throw new Error("Kein Analyse-Ergebnis vorhanden.");
+        }
+        data = JSON.parse(row.result);
+      } else if (input.inlineData) {
+        data = input.inlineData;
+      } else {
+        throw new Error("Entweder analysisId oder inlineData erforderlich.");
       }
 
-      const data = JSON.parse(row.result);
-      logger.info({ msg: "translate_started", analysisId: input.analysisId });
+      logger.info({ msg: "translate_started", analysisId: input.analysisId ?? "inline" });
 
       try {
         const translated = await translateAnalysis(data);
-        logger.info({ msg: "translate_complete", analysisId: input.analysisId });
+        logger.info({ msg: "translate_complete", analysisId: input.analysisId ?? "inline" });
         return translated;
       } catch (err: any) {
-        logger.error({ msg: "translate_failed", analysisId: input.analysisId, error: err?.message });
+        logger.error({ msg: "translate_failed", error: err?.message });
         throw new Error("Übersetzung fehlgeschlagen. Bitte versuchen Sie es erneut.");
       }
     }),

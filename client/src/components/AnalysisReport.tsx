@@ -169,10 +169,15 @@ export default function AnalysisReport({ data, analysisId }: { data: AnalysisDat
 
   const handleSetLang = (next: Lang) => {
     setLang(next);
-    if (next === "en" && analysisId && !translatedData && !isTranslating) {
+    if (next === "en" && !translatedData && !isTranslating) {
       setIsTranslating(true);
       setTranslateError(false);
-      translateMutation.mutate({ analysisId, targetLang: "en" });
+      if (analysisId) {
+        translateMutation.mutate({ analysisId, targetLang: "en" });
+      } else {
+        // Demo mode or missing DB id — pass data directly
+        translateMutation.mutate({ inlineData: data, targetLang: "en" });
+      }
     }
   };
 
@@ -581,16 +586,10 @@ export default function AnalysisReport({ data, analysisId }: { data: AnalysisDat
         )}
       </motion.div>
 
-      {/* Bottom hint */}
-      {lang === "en" && !loading && (
+      {/* Bottom hint — only shown on translation error */}
+      {lang === "en" && !loading && translateError && (
         <p className="text-xs text-muted-foreground italic text-center">
-          {translateError
-            ? "Labels translated — content translation temporarily unavailable."
-            : translatedData
-            ? null
-            : !analysisId
-            ? "Labels translated to English — analysis content remains in the original language."
-            : null}
+          Labels translated — content translation temporarily unavailable.
         </p>
       )}
     </div>
