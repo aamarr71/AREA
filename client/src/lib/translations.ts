@@ -1,0 +1,97 @@
+export type Lang = "de" | "en";
+
+const de = {
+  objekt: "Objekt #",
+  wien: "Wien",
+  zimmer: "Zimmer",
+  konfidenz: "Konfidenz",
+  kritisch: "Kritisch",
+  warnung: "Warnung",
+  ok: "OK",
+  fehlende_angaben: "Fehlende Angaben",
+  objektdaten: "Objektdaten",
+  kaufpreis: "Kaufpreis",
+  preis_m2: "Preis/m²",
+  betriebskosten: "Betriebskosten",
+  mo: "/Mo",
+  baujahr: "Baujahr",
+  ausstattung: "Ausstattung",
+  ansprechpartner: "Ansprechpartner",
+  qualitaetspruefung: "Qualitätsprüfung",
+  widersprueche: "Widersprüche",
+  empfehlung: "Empfehlung:",
+  textqualitaet: "Textqualität",
+  qualitaets_score: "Qualitäts-Score",
+  generisch: "Text wurde als generisch eingestuft",
+  verkaufsstrategie: "Verkaufsstrategie",
+  primaere_zielgruppe: "Primäre Zielgruppe",
+  budget: "Budget:",
+  top_verkaufsargumente: "Top Verkaufsargumente",
+  einwand_handling: "Einwand-Handling",
+  tonalitaet: "Tonalität:",
+  markteinschaetzung: "Markteinschätzung",
+  preis_bewertung: "Preis-Bewertung",
+  bezirks_m2: "Bezirks-Ø m²",
+  verkaufsdauer: "Verkaufsdauer",
+  tage: "Tage",
+  kurz_expose: "Optimiertes Kurz-Exposé",
+  zeichen: "Zeichen",
+};
+
+export type TranslationKey = keyof typeof de;
+
+const en: Record<TranslationKey, string> = {
+  objekt: "Property #",
+  wien: "Vienna",
+  zimmer: "Rooms",
+  konfidenz: "Confidence",
+  kritisch: "Critical",
+  warnung: "Warning",
+  ok: "OK",
+  fehlende_angaben: "Missing Information",
+  objektdaten: "Property Data",
+  kaufpreis: "Purchase Price",
+  preis_m2: "Price/m²",
+  betriebskosten: "Service Charges",
+  mo: "/mo",
+  baujahr: "Year Built",
+  ausstattung: "Features",
+  ansprechpartner: "Contact Person",
+  qualitaetspruefung: "Quality Check",
+  widersprueche: "Contradictions",
+  empfehlung: "Recommendation:",
+  textqualitaet: "Text Quality",
+  qualitaets_score: "Quality Score",
+  generisch: "Text was classified as generic",
+  verkaufsstrategie: "Sales Strategy",
+  primaere_zielgruppe: "Primary Target Group",
+  budget: "Budget:",
+  top_verkaufsargumente: "Top Selling Points",
+  einwand_handling: "Objection Handling",
+  tonalitaet: "Tone:",
+  markteinschaetzung: "Market Assessment",
+  preis_bewertung: "Price Evaluation",
+  bezirks_m2: "District Avg m²",
+  verkaufsdauer: "Time to Sell",
+  tage: "Days",
+  kurz_expose: "Optimised Short Listing",
+  zeichen: "Characters",
+};
+
+const strings: Record<Lang, Record<TranslationKey, string>> = { de, en };
+
+export function t(key: TranslationKey, lang: Lang): string {
+  return strings[lang][key] ?? strings.de[key];
+}
+
+const ampelMap: Partial<Record<string, Record<Lang, string>>> = {
+  kritisch: { de: "kritisch", en: "critical" },
+  mittel:   { de: "mittel",   en: "medium"   },
+  gering:   { de: "gering",   en: "minor"    },
+  hoch:     { de: "hoch",     en: "high"     },
+  niedrig:  { de: "niedrig",  en: "low"      },
+};
+
+export function tAmpel(val: string, lang: Lang): string {
+  return ampelMap[val]?.[lang] ?? val;
+}

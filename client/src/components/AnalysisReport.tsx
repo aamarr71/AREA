@@ -4,6 +4,7 @@
  * Colors: Rot (#E63946) kritisch, Amber (#F4A261) mittel, Teal (#2A9D8F) OK
  */
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -11,7 +12,6 @@ import {
   XCircle,
   FileText,
   MapPin,
-  Euro,
   Home,
   BarChart3,
   Target,
@@ -20,6 +20,7 @@ import {
   Clock,
   Info,
 } from "lucide-react";
+import { t, tAmpel, type Lang } from "../lib/translations";
 
 interface AnalysisData {
   meta?: {
@@ -74,7 +75,7 @@ function ScoreBar({ score, max = 100, label }: { score: number; max?: number; la
   );
 }
 
-function KonfidenzRing({ score }: { score: number }) {
+function KonfidenzRing({ score, label }: { score: number; label: string }) {
   const pct = score * 100;
   const circumference = 2 * Math.PI * 36;
   const offset = circumference - (pct / 100) * circumference;
@@ -95,7 +96,7 @@ function KonfidenzRing({ score }: { score: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-mono text-lg font-bold" style={{ color }}>{(score * 100).toFixed(0)}%</span>
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Konfidenz</span>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</span>
       </div>
     </div>
   );
@@ -119,6 +120,9 @@ function SectionHeader({ icon, title, index }: { icon: React.ReactNode; title: s
 }
 
 export default function AnalysisReport({ data }: { data: AnalysisData }) {
+  const [lang, setLang] = useState<Lang>("de");
+  const locale = lang === "de" ? "de-AT" : "en-GB";
+
   const ext = data.stufe_1_extraktion;
   const qual = data.stufe_2_qualitaetspruefung;
   const strat = data.stufe_3_verkaufsstrategie;
@@ -139,7 +143,7 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-mono text-xs text-muted-foreground tracking-wider uppercase">Objekt #{ext?.objekt_id || "—"}</span>
+              <span className="font-mono text-xs text-muted-foreground tracking-wider uppercase">{t("objekt", lang)}{ext?.objekt_id || "—"}</span>
               <span className="text-xs text-muted-foreground">|</span>
               <span className="font-mono text-xs text-muted-foreground">{data.meta?.analyse_datum || "—"}</span>
             </div>
@@ -148,7 +152,7 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
             </h2>
             <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-muted-foreground">
               {ext?.adresse?.bezirk && (
-                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {ext.adresse.bezirk} Wien</span>
+                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {ext.adresse.bezirk} {t("wien", lang)}</span>
               )}
               {ext?.typ && (
                 <span className="flex items-center gap-1"><Home className="w-3.5 h-3.5" /> {ext.typ}</span>
@@ -157,13 +161,28 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
                 <span className="font-mono">{ext.flaeche.wohnflaeche_m2} m²</span>
               )}
               {ext?.zimmer?.gesamt && (
-                <span>{ext.zimmer.gesamt} Zimmer</span>
+                <span>{ext.zimmer.gesamt} {t("zimmer", lang)}</span>
               )}
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* Language toggle */}
+            <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
+              <button
+                onClick={() => setLang("de")}
+                className={`px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${
+                  lang === "de" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >DE</button>
+              <button
+                onClick={() => setLang("en")}
+                className={`px-2.5 py-1 rounded text-xs font-mono font-semibold transition-colors ${
+                  lang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >EN</button>
+            </div>
             {data.meta?.konfidenz_score !== undefined && (
-              <KonfidenzRing score={data.meta.konfidenz_score} />
+              <KonfidenzRing score={data.meta.konfidenz_score} label={t("konfidenz", lang)} />
             )}
           </div>
         </div>
@@ -172,22 +191,22 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
           {criticalCount > 0 && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-              <XCircle className="w-3 h-3" /> {criticalCount} Kritisch
+              <XCircle className="w-3 h-3" /> {criticalCount} {t("kritisch", lang)}
             </span>
           )}
           {warningCount > 0 && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-              <AlertTriangle className="w-3 h-3" /> {warningCount} Warnung
+              <AlertTriangle className="w-3 h-3" /> {warningCount} {t("warnung", lang)}
             </span>
           )}
           {okCount > 0 && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
-              <CheckCircle2 className="w-3 h-3" /> {okCount} OK
+              <CheckCircle2 className="w-3 h-3" /> {okCount} {t("ok", lang)}
             </span>
           )}
           {qual?.fehlende_angaben?.length > 0 && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-              <Info className="w-3 h-3" /> {qual.fehlende_angaben.length} Fehlende Angaben
+              <Info className="w-3 h-3" /> {qual.fehlende_angaben.length} {t("fehlende_angaben", lang)}
             </span>
           )}
         </div>
@@ -195,42 +214,42 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
 
       {/* STUFE 1: Extraktion */}
       <motion.div className="bg-card border border-border rounded-lg p-6" custom={1} initial="hidden" animate="visible" variants={fadeIn}>
-        <SectionHeader icon={<FileText className="w-4 h-4" />} title="Objektdaten" index={1} />
+        <SectionHeader icon={<FileText className="w-4 h-4" />} title={t("objektdaten", lang)} index={1} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {ext?.preis?.kaufpreis_euro && (
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Kaufpreis</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("kaufpreis", lang)}</span>
               <p className="font-mono text-lg font-bold text-primary">
-                {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(ext.preis.kaufpreis_euro)}
+                {new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(ext.preis.kaufpreis_euro)}
               </p>
             </div>
           )}
           {ext?.preis?.preis_pro_m2 && (
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Preis/m²</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("preis_m2", lang)}</span>
               <p className="font-mono text-lg font-bold">
-                {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(ext.preis.preis_pro_m2)}
+                {new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(ext.preis.preis_pro_m2)}
               </p>
             </div>
           )}
           {ext?.preis?.betriebskosten_euro && (
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Betriebskosten</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("betriebskosten", lang)}</span>
               <p className="font-mono text-lg font-bold">
-                {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(ext.preis.betriebskosten_euro)}/Mo
+                {new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(ext.preis.betriebskosten_euro)}{t("mo", lang)}
               </p>
             </div>
           )}
           {ext?.baujahr && (
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Baujahr</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("baujahr", lang)}</span>
               <p className="font-mono text-lg font-bold">{ext.baujahr}</p>
             </div>
           )}
         </div>
         {ext?.ausstattung?.length > 0 && (
           <div className="mt-4 pt-4 border-t border-border">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">Ausstattung</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("ausstattung", lang)}</span>
             <div className="flex flex-wrap gap-2 mt-2">
               {ext.ausstattung.map((a: string, i: number) => (
                 <span key={i} className="px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground text-xs font-medium">{a}</span>
@@ -240,19 +259,19 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         )}
         {ext?.ansprechpartner && (
           <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
-            Ansprechpartner: <span className="font-medium text-foreground">{ext.ansprechpartner}</span>
+            {t("ansprechpartner", lang)}: <span className="font-medium text-foreground">{ext.ansprechpartner}</span>
           </div>
         )}
       </motion.div>
 
       {/* STUFE 2: Qualitätsprüfung */}
       <motion.div className="bg-card border border-border rounded-lg p-6" custom={2} initial="hidden" animate="visible" variants={fadeIn}>
-        <SectionHeader icon={<AlertTriangle className="w-4 h-4" />} title="Qualitätsprüfung" index={2} />
+        <SectionHeader icon={<AlertTriangle className="w-4 h-4" />} title={t("qualitaetspruefung", lang)} index={2} />
 
         {/* Widersprüche */}
         {qual?.widersprueche?.length > 0 && (
           <div className="space-y-3 mb-6">
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Widersprüche</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("widersprueche", lang)}</h4>
             {qual.widersprueche.map((w: any, i: number) => {
               const s = severityColor(w.schweregrad);
               return (
@@ -268,12 +287,12 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
                     {s.icon}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold uppercase tracking-wider ${s.text}`}>{w.schweregrad}</span>
+                        <span className={`text-xs font-semibold uppercase tracking-wider ${s.text}`}>{tAmpel(w.schweregrad, lang)}</span>
                         <span className="font-mono text-xs text-muted-foreground">— {w.feld}</span>
                       </div>
                       <p className="text-sm text-foreground">{w.problem}</p>
                       {w.empfehlung && (
-                        <p className="text-xs text-muted-foreground mt-2 italic">Empfehlung: {w.empfehlung}</p>
+                        <p className="text-xs text-muted-foreground mt-2 italic">{t("empfehlung", lang)} {w.empfehlung}</p>
                       )}
                     </div>
                   </div>
@@ -286,10 +305,10 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         {/* Fehlende Angaben */}
         {qual?.fehlende_angaben?.length > 0 && (
           <div className="space-y-2 mb-6">
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Fehlende Angaben</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("fehlende_angaben", lang)}</h4>
             {qual.fehlende_angaben.map((f: any, i: number) => (
               <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-md bg-secondary/50">
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${relevanzColor(f.relevanz)}`}>{f.relevanz}</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${relevanzColor(f.relevanz)}`}>{tAmpel(f.relevanz, lang)}</span>
                 <span className="font-mono text-sm">{f.feld}</span>
                 <span className="text-xs text-muted-foreground flex-1">{f.grund}</span>
               </div>
@@ -300,11 +319,11 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         {/* Textqualität */}
         {qual?.text_qualitaet && (
           <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Textqualität</h4>
-            <ScoreBar score={qual.text_qualitaet.score} label="Qualitäts-Score" />
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">{t("textqualitaet", lang)}</h4>
+            <ScoreBar score={qual.text_qualitaet.score} label={t("qualitaets_score", lang)} />
             {qual.text_qualitaet.ist_generisch && (
               <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> Text wurde als generisch eingestuft
+                <AlertTriangle className="w-3 h-3" /> {t("generisch", lang)}
               </p>
             )}
             {qual.text_qualitaet.schwaechen?.length > 0 && (
@@ -322,17 +341,17 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
 
       {/* STUFE 3: Verkaufsstrategie */}
       <motion.div className="bg-card border border-border rounded-lg p-6" custom={3} initial="hidden" animate="visible" variants={fadeIn}>
-        <SectionHeader icon={<Target className="w-4 h-4" />} title="Verkaufsstrategie" index={3} />
+        <SectionHeader icon={<Target className="w-4 h-4" />} title={t("verkaufsstrategie", lang)} index={3} />
 
         {/* Zielgruppen */}
         {strat?.primaere_zielgruppe && (
           <div className="mb-6">
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Primäre Zielgruppe</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("primaere_zielgruppe", lang)}</h4>
             <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
               <p className="font-medium text-teal-800">{strat.primaere_zielgruppe.profil}</p>
               <p className="text-sm text-teal-700 mt-1">{strat.primaere_zielgruppe.kaufmotiv}</p>
               {strat.primaere_zielgruppe.budget_einschaetzung && (
-                <p className="font-mono text-xs text-teal-600 mt-2">Budget: {strat.primaere_zielgruppe.budget_einschaetzung}</p>
+                <p className="font-mono text-xs text-teal-600 mt-2">{t("budget", lang)} {strat.primaere_zielgruppe.budget_einschaetzung}</p>
               )}
             </div>
           </div>
@@ -341,7 +360,7 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         {/* Top 5 Verkaufsargumente */}
         {strat?.top_5_verkaufsargumente?.length > 0 && (
           <div className="mb-6">
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Top Verkaufsargumente</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t("top_verkaufsargumente", lang)}</h4>
             <div className="space-y-2">
               {strat.top_5_verkaufsargumente.map((a: any, i: number) => (
                 <div key={i} className="flex items-start gap-3 py-2">
@@ -359,7 +378,7 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         {/* Einwand-Handling */}
         {strat?.einwand_handling?.length > 0 && (
           <div className="mb-6">
-            <SectionHeader icon={<MessageSquare className="w-4 h-4" />} title="Einwand-Handling" index={4} />
+            <SectionHeader icon={<MessageSquare className="w-4 h-4" />} title={t("einwand_handling", lang)} index={4} />
             <div className="space-y-3">
               {strat.einwand_handling.map((e: any, i: number) => (
                 <div key={i} className="border border-border rounded-lg p-4">
@@ -369,11 +388,11 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
                       e.wahrscheinlichkeit === "hoch" ? "bg-red-100 text-red-700" :
                       e.wahrscheinlichkeit === "mittel" ? "bg-amber-100 text-amber-700" :
                       "bg-teal-100 text-teal-700"
-                    }`}>{e.wahrscheinlichkeit}</span>
+                    }`}>{tAmpel(e.wahrscheinlichkeit, lang)}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{e.antwort_fuer_makler}</p>
                   {e.tonalitaet && (
-                    <span className="inline-block mt-2 text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Tonalität: {e.tonalitaet}</span>
+                    <span className="inline-block mt-2 text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{t("tonalitaet", lang)} {e.tonalitaet}</span>
                   )}
                 </div>
               ))}
@@ -384,10 +403,10 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         {/* Markteinschätzung */}
         {strat?.markteinschaetzung && (
           <div className="mb-6">
-            <SectionHeader icon={<TrendingUp className="w-4 h-4" />} title="Markteinschätzung" index={5} />
+            <SectionHeader icon={<TrendingUp className="w-4 h-4" />} title={t("markteinschaetzung", lang)} index={5} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Preis-Bewertung</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("preis_bewertung", lang)}</span>
                 <p className={`font-mono text-lg font-bold mt-1 ${
                   strat.markteinschaetzung.preis_bewertung?.includes("über") ? "text-red-600" :
                   strat.markteinschaetzung.preis_bewertung?.includes("unter") ? "text-teal-600" :
@@ -396,16 +415,16 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
               </div>
               {strat.markteinschaetzung.vergleichs_m2_preis_bezirk && (
                 <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Bezirks-Ø m²</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("bezirks_m2", lang)}</span>
                   <p className="font-mono text-lg font-bold mt-1">
-                    {new Intl.NumberFormat("de-AT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(strat.markteinschaetzung.vergleichs_m2_preis_bezirk)}
+                    {new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(strat.markteinschaetzung.vergleichs_m2_preis_bezirk)}
                   </p>
                 </div>
               )}
               {strat.markteinschaetzung.verkaufsdauer_prognose_tage && (
                 <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1"><Clock className="w-3 h-3" /> Verkaufsdauer</span>
-                  <p className="font-mono text-lg font-bold mt-1">{strat.markteinschaetzung.verkaufsdauer_prognose_tage} Tage</p>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1"><Clock className="w-3 h-3" /> {t("verkaufsdauer", lang)}</span>
+                  <p className="font-mono text-lg font-bold mt-1">{strat.markteinschaetzung.verkaufsdauer_prognose_tage} {t("tage", lang)}</p>
                 </div>
               )}
             </div>
@@ -420,16 +439,23 @@ export default function AnalysisReport({ data }: { data: AnalysisData }) {
         {/* Optimiertes Kurz-Exposé */}
         {strat?.optimiertes_kurz_expose && (
           <div>
-            <SectionHeader icon={<BarChart3 className="w-4 h-4" />} title="Optimiertes Kurz-Exposé" index={6} />
+            <SectionHeader icon={<BarChart3 className="w-4 h-4" />} title={t("kurz_expose", lang)} index={6} />
             <div className="bg-primary text-primary-foreground rounded-lg p-5">
               <p className="text-sm leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
                 {strat.optimiertes_kurz_expose}
               </p>
-              <p className="text-[10px] mt-3 opacity-60 font-mono">{strat.optimiertes_kurz_expose?.length || 0} / 300 Zeichen</p>
+              <p className="text-[10px] mt-3 opacity-60 font-mono">{strat.optimiertes_kurz_expose?.length || 0} / 300 {t("zeichen", lang)}</p>
             </div>
           </div>
         )}
       </motion.div>
+
+      {/* EN hint */}
+      {lang === "en" && (
+        <p className="text-xs text-muted-foreground italic text-center">
+          Labels translated to English — analysis content remains in the original language.
+        </p>
+      )}
     </div>
   );
 }
