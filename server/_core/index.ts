@@ -4,7 +4,7 @@ import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import helmet from "helmet";
 import cors from "cors";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { setupVite, serveStatic } from "./vite";
@@ -87,6 +87,7 @@ async function startServer() {
       max: ENV.rateLimitGlobal,
       standardHeaders: true,
       legacyHeaders: false,
+      keyGenerator: ipKeyGenerator,
       handler: (_req, res) => {
         res.status(429).json({ message: "Zu viele Anfragen. Bitte warten Sie einen Moment." });
       },
@@ -101,7 +102,7 @@ async function startServer() {
       max: ENV.rateLimitAnalysis,
       standardHeaders: true,
       legacyHeaders: false,
-      keyGenerator: (req) => req.ip || "unknown",
+      keyGenerator: ipKeyGenerator,
       handler: (_req, res) => {
         res.status(429).json({ message: "Analyse-Limit erreicht. Bitte warten Sie eine Minute." });
       },
