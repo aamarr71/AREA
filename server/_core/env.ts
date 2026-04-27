@@ -12,4 +12,6 @@ export const ENV = {
   rateLimitAnalysis: Number(process.env.RATE_LIMIT_ANALYSIS ?? 15),
   // Phase 2 (Auth)
   sessionSecret: process.env.SESSION_SECRET ?? "area-dev-secret-change-in-prod",
+  // Phase 3.1 (CORS)
+  customDomain: process.env.CUSTOM_DOMAIN ?? "",
 };

@@ -3,6 +3,7 @@ import express, { type Request, type Response, type NextFunction } from "express
 import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import helmet from "helmet";
+import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -40,7 +41,27 @@ async function startServer() {
   // 2. Helmet security headers
   app.use(helmet());
 
-  // 3. Request logging middleware
+  // 3. CORS — explicit whitelist, credentials required for session cookies
+  const allowedOrigins = ["https://area-production-773c.up.railway.app"];
+  if (ENV.customDomain) allowedOrigins.push(`https://${ENV.customDomain}`);
+  if (!ENV.isProduction) {
+    allowedOrigins.push("http://localhost:5173");
+    allowedOrigins.push("http://localhost:3000");
+  }
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: Origin ${origin} not allowed`));
+      },
+      credentials: true,
+      methods: ["GET", "POST"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+
+  // 4. Request logging middleware
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestId = generateRequestId();
     const startMs = Date.now();
