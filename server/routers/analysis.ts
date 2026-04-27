@@ -9,6 +9,7 @@ import { logger } from "../middleware/logger";
 import { fetchWithRetry } from "../middleware/fetchWithRetry";
 import { recordAnalysis } from "../middleware/metrics";
 import { getCached, setCache } from "../middleware/cache";
+import { translateAnalysis } from "../middleware/deepseek";
 import { db } from "../db/connection";
 import { analyses } from "../db/schema";
 
@@ -58,16 +59,16 @@ export const analysisRouter = router({
             success: true,
             cacheHit: true,
           });
-          // Persist cache-hit to history as well so users see all attempts
-          await db.insert(analyses).values({
+          // Persist cache-hit to history so users see all attempts
+          const cacheRows = await db.insert(analyses).values({
             userId,
             url: input.url,
             contentHash: pageHash,
             result: JSON.stringify(cached),
             status: "success",
             durationMs: Date.now() - startMs,
-          }).catch((err) => logger.warn({ msg: "history_persist_failed", err: err?.message }));
-          return cached;
+          }).returning({ id: analyses.id }).catch(() => [] as { id: number }[]);
+          return { _areaId: cacheRows[0]?.id ?? undefined, ...cached };
         }
       }
 
@@ -97,7 +98,7 @@ export const analysisRouter = router({
           return JSON.parse(clean);
         };
 
-        const persistSuccess = async (result: any, format: string) => {
+        const persistSuccess = async (result: any, format: string): Promise<number | null> => {
           if (pageHash) setCache(input.url, pageHash, result);
           recordAnalysis({
             url: input.url,
@@ -107,19 +108,23 @@ export const analysisRouter = router({
             cacheHit: false,
             format,
           });
-          await db.insert(analyses).values({
+          const rows = await db.insert(analyses).values({
             userId,
             url: input.url,
             contentHash: pageHash,
             result: JSON.stringify(result),
             status: "success",
             durationMs: Date.now() - startMs,
-          }).catch((err) => logger.warn({ msg: "history_persist_failed", err: err?.message }));
+          }).returning({ id: analyses.id }).catch((err) => {
+            logger.warn({ msg: "history_persist_failed", err: err?.message });
+            return [] as { id: number }[];
+          });
           logger.info({
             msg: "analysis_complete",
             durationMs: Date.now() - startMs,
             confidence: result?.meta?.konfidenz,
           });
+          return rows[0]?.id ?? null;
         };
 
         // Shape 1: OpenAI Responses API (gpt-4.1) — output[].content[].text
@@ -127,8 +132,8 @@ export const analysisRouter = router({
         if (typeof responsesText === "string") {
           logger.info({ msg: "parser_result", format: "shape_1_responses_api" });
           const result = safeParse(responsesText);
-          await persistSuccess(result, "shape_1");
-          return result;
+          const id = await persistSuccess(result, "shape_1");
+          return { _areaId: id ?? undefined, ...result };
         }
 
         // Shape 2: OpenAI Chat Completions — message.content
@@ -137,31 +142,31 @@ export const analysisRouter = router({
         if (typeof chatText === "string") {
           logger.info({ msg: "parser_result", format: "shape_2_chat_completions" });
           const result = safeParse(chatText);
-          await persistSuccess(result, "shape_2");
-          return result;
+          const id = await persistSuccess(result, "shape_2");
+          return { _areaId: id ?? undefined, ...result };
         }
 
         // Shape 3: n8n simplified — direct text field
         if (typeof data?.text === "string") {
           logger.info({ msg: "parser_result", format: "shape_3_n8n_text" });
           const result = safeParse(data.text);
-          await persistSuccess(result, "shape_3");
-          return result;
+          const id = await persistSuccess(result, "shape_3");
+          return { _areaId: id ?? undefined, ...result };
         }
 
         // Shape 4: n8n langchain — output as string
         if (typeof data?.output === "string") {
           logger.info({ msg: "parser_result", format: "shape_4_langchain" });
           const result = safeParse(data.output);
-          await persistSuccess(result, "shape_4");
-          return result;
+          const id = await persistSuccess(result, "shape_4");
+          return { _areaId: id ?? undefined, ...result };
         }
 
         // Shape 5: already parsed JSON
         if (data?.meta && data?.stufe_1_extraktion) {
           logger.info({ msg: "parser_result", format: "shape_5_parsed_json" });
-          await persistSuccess(data, "shape_5");
-          return data;
+          const id = await persistSuccess(data, "shape_5");
+          return { _areaId: id ?? undefined, ...data };
         }
 
         // Shape 6: async webhook misconfiguration
@@ -250,5 +255,35 @@ export const analysisRouter = router({
         durationMs: row.durationMs,
         createdAt: row.createdAt,
       };
+    }),
+
+  /** Translate a stored analysis result to English via DeepSeek. */
+  translate: protectedProcedure
+    .input(z.object({
+      analysisId: z.number().int().positive(),
+      targetLang: z.literal("en"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const row = await db.query.analyses.findFirst({
+        where: eq(analyses.id, input.analysisId),
+      });
+      if (!row || row.userId !== ctx.userId) {
+        throw new Error("Analyse nicht gefunden.");
+      }
+      if (!row.result) {
+        throw new Error("Kein Analyse-Ergebnis vorhanden.");
+      }
+
+      const data = JSON.parse(row.result);
+      logger.info({ msg: "translate_started", analysisId: input.analysisId });
+
+      try {
+        const translated = await translateAnalysis(data);
+        logger.info({ msg: "translate_complete", analysisId: input.analysisId });
+        return translated;
+      } catch (err: any) {
+        logger.error({ msg: "translate_failed", analysisId: input.analysisId, error: err?.message });
+        throw new Error("Übersetzung fehlgeschlagen. Bitte versuchen Sie es erneut.");
+      }
     }),
 });

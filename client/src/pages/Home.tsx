@@ -95,6 +95,7 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisId, setAnalysisId] = useState<number | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +112,9 @@ export default function Home() {
 
   const analyzeMutation = trpc.analysis.analyze.useMutation({
     onSuccess: (data) => {
-      setAnalysisData(data);
+      const { _areaId, ...reportData } = data as any;
+      setAnalysisData(reportData);
+      setAnalysisId(_areaId ?? null);
       setIsLoading(false);
       setTimeout(() => {
         reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -128,6 +131,7 @@ export default function Home() {
     setIsLoading(true);
     setAnalysisError(null);
     setAnalysisData(null);
+    setAnalysisId(null);
     analyzeMutation.mutate({ url: url.trim() });
   };
 
@@ -340,7 +344,7 @@ export default function Home() {
               </Button>
             </div>
 
-            <AnalysisReport data={analysisData} />
+            <AnalysisReport data={analysisData} analysisId={analysisId} />
           </motion.div>
         )}
       </AnimatePresence>

@@ -14,4 +14,6 @@ export const ENV = {
   sessionSecret: process.env.SESSION_SECRET ?? "area-dev-secret-change-in-prod",
   // Phase 3.1 (CORS)
   customDomain: process.env.CUSTOM_DOMAIN ?? "",
+  // Phase 3 Feature (DeepSeek Übersetzung)
+  deepseekApiKey: process.env.DEEPSEEK_API_KEY ?? "",
 };
