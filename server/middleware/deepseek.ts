@@ -3,7 +3,13 @@ import { logger } from "./logger";
 
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 
-const SYSTEM_PROMPT = `You are a professional German-to-English translator specializing in Austrian real estate terminology.
+const SYSTEM_PROMPT = `CRITICAL RULE: Text in square brackets like [PII_1], [PII_2], [PII_1_PARTIAL] are privacy placeholders. You MUST:
+- Keep them EXACTLY as they are (same spelling, same brackets)
+- Do NOT translate, modify, remove, or explain them
+- Do NOT add spaces inside the brackets
+- Treat them as untouchable tokens
+
+You are a professional German-to-English translator specializing in Austrian real estate terminology.
 
 Rules:
 - Translate each numbered line and return ONLY the translations in the same numbered format
@@ -23,6 +29,209 @@ Rules:
 - Keep numbers and units unchanged
 - Maintain the same tone (professional, analytical)
 - Do NOT add explanations, only translations`;
+
+// ─── PII Detection ────────────────────────────────────────────────────────────
+
+const PII_LOCATION_KEYS = [
+  "adresse", "address", "straße", "strasse", "street",
+  "plz", "postleitzahl", "zip",
+  "bezirk", "district", "ort", "city", "standort", "location",
+];
+
+const PII_PERSON_KEYS = [
+  "eigentümer", "eigentuemer", "owner",
+  "verkäufer", "verkaeufer", "seller",
+  "makler", "broker", "agent",
+  "kontakt", "contact",
+];
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isPiiKey(key: string): "location" | "person" | "name" | null {
+  const lower = key.toLowerCase();
+  if (PII_LOCATION_KEYS.some((k) => lower.includes(k))) return "location";
+  if (PII_PERSON_KEYS.some((k) => lower.includes(k))) return "person";
+  if (lower.includes("name")) return "name";
+  return null;
+}
+
+function looksLikePersonName(val: string): boolean {
+  // 1-5 words, each starting with uppercase (including umlauts and & for company names)
+  return /^[A-ZÄÖÜ][a-zA-ZäöüÄÖÜß\-&]+(\s[A-ZÄÖÜ&][a-zA-ZäöüÄÖÜß\-&]+){0,4}$/.test(val.trim())
+    && val.length >= 3
+    && val.length <= 60;
+}
+
+function isPostalCodeOnly(val: string): boolean {
+  return /^\d{4,6}$/.test(val.trim());
+}
+
+function extractStreetName(address: string): string | null {
+  // "Währinger Straße 45, 1090 Wien" → "Währinger Straße"
+  // "Marxergasse 12" → "Marxergasse"
+  const match = address.match(/^([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß\s\-\.]+?)(?=\s+\d)/);
+  return match ? match[1].trim() : null;
+}
+
+// ─── PII Extraction ───────────────────────────────────────────────────────────
+
+interface PiiEntry {
+  placeholder: string;
+  value: string;
+  partialPlaceholder?: string;
+  partialValue?: string;
+}
+
+export function extractPII(data: Record<string, any>): {
+  sanitized: Record<string, any>;
+  piiMap: Map<string, string>;
+} {
+  const sanitized: Record<string, any> = JSON.parse(JSON.stringify(data));
+  const piiMap = new Map<string, string>();
+  const entries: PiiEntry[] = [];
+  let counter = 0;
+
+  function scanObj(obj: any): void {
+    if (!obj || typeof obj !== "object") return;
+    if (Array.isArray(obj)) {
+      for (const item of obj) {
+        if (item && typeof item === "object") scanObj(item);
+      }
+      return;
+    }
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (val === null || val === undefined || val === "") continue;
+
+      if (typeof val === "string") {
+        const piiType = isPiiKey(key);
+        let shouldRedact = false;
+
+        if (piiType === "location") {
+          // Skip pure postal codes — not PII on their own
+          shouldRedact = !isPostalCodeOnly(val);
+        } else if (piiType === "person") {
+          shouldRedact = true;
+        } else if (piiType === "name") {
+          shouldRedact = looksLikePersonName(val);
+        }
+
+        if (shouldRedact) {
+          counter++;
+          const placeholder = `[PII_${counter}]`;
+          piiMap.set(placeholder, val);
+          obj[key] = placeholder;
+
+          const entry: PiiEntry = { placeholder, value: val };
+
+          if (piiType === "location") {
+            const streetName = extractStreetName(val);
+            if (streetName && streetName !== val && streetName.length > 3) {
+              entry.partialPlaceholder = `[PII_${counter}_PARTIAL]`;
+              entry.partialValue = streetName;
+              piiMap.set(entry.partialPlaceholder, streetName);
+            }
+          }
+
+          entries.push(entry);
+        }
+      } else if (typeof val === "object") {
+        scanObj(val);
+      }
+    }
+  }
+
+  scanObj(sanitized);
+
+  // Option B: Replace PII values found verbatim inside free-text string fields
+  function replaceText(text: string): string {
+    let result = text;
+    for (const { value, placeholder, partialValue, partialPlaceholder } of entries) {
+      if (value && !result.startsWith("[PII_")) {
+        result = result.replace(new RegExp(escapeRegex(value), "g"), placeholder);
+      }
+      if (partialValue && partialPlaceholder) {
+        result = result.replace(new RegExp(escapeRegex(partialValue), "g"), partialPlaceholder);
+      }
+    }
+    return result;
+  }
+
+  function replaceInObj(obj: any): void {
+    if (!obj || typeof obj !== "object") return;
+    if (Array.isArray(obj)) {
+      for (let i = 0; i < obj.length; i++) {
+        if (typeof obj[i] === "string") {
+          obj[i] = replaceText(obj[i]);
+        } else {
+          replaceInObj(obj[i]);
+        }
+      }
+      return;
+    }
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === "string") {
+        obj[key] = replaceText(obj[key]);
+      } else if (typeof obj[key] === "object") {
+        replaceInObj(obj[key]);
+      }
+    }
+  }
+
+  replaceInObj(sanitized);
+
+  return { sanitized, piiMap };
+}
+
+// ─── PII Restoration ──────────────────────────────────────────────────────────
+
+// originals: the pre-translation strings, used to know which placeholders were expected per entry
+export function restorePII(
+  translations: string[],
+  piiMap: Map<string, string>,
+  originals?: string[],
+): string[] {
+  if (piiMap.size === 0) return translations;
+
+  return translations.map((text, idx) => {
+    let result = text;
+    const original = originals?.[idx] ?? "";
+
+    for (const [placeholder, value] of Array.from(piiMap.entries())) {
+      if (result.includes(placeholder)) {
+        result = result.split(placeholder).join(value);
+      } else {
+        // Fallback: LLMs sometimes alter bracket syntax
+        const variants = [
+          placeholder.replace("[", "(").replace("]", ")"),  // (PII_1)
+          placeholder.replace(/[\[\]]/g, ""),               // PII_1
+          placeholder.replace("_", " "),                    // [PII 1]
+        ];
+        let restored = false;
+        for (const variant of variants) {
+          if (result.includes(variant)) {
+            result = result.split(variant).join(value);
+            restored = true;
+            break;
+          }
+        }
+        // Only warn when the placeholder was present in the original string (DeepSeek dropped it)
+        if (!restored && original.includes(placeholder)) {
+          logger.warn({
+            msg: "pii_placeholder_missing",
+            placeholder,
+            hint: "DeepSeek may have altered or dropped this placeholder",
+          });
+        }
+      }
+    }
+    return result;
+  });
+}
+
+// ─── DeepSeek API ─────────────────────────────────────────────────────────────
 
 export async function translateTexts(texts: string[]): Promise<string[]> {
   if (!ENV.deepseekApiKey) {
@@ -72,7 +281,7 @@ export async function translateTexts(texts: string[]): Promise<string[]> {
 // Extracts all translatable dynamic fields from an analysis result,
 // translates them in one API call, and returns a deep clone with translations applied.
 export async function translateAnalysis(data: any): Promise<any> {
-  const result = JSON.parse(JSON.stringify(data));
+  const { sanitized: result, piiMap } = extractPII(data);
   const re = result.stufe_1_extraktion;
   const rq = result.stufe_2_qualitaetspruefung;
   const rs = result.stufe_3_verkaufsstrategie;
@@ -143,7 +352,8 @@ export async function translateAnalysis(data: any): Promise<any> {
 
   if (toTranslate.length === 0) return result;
 
-  const translations = await translateTexts(toTranslate);
+  const rawTranslations = await translateTexts(toTranslate);
+  const translations = piiMap.size > 0 ? restorePII(rawTranslations, piiMap, toTranslate) : rawTranslations;
   setters.forEach((setter, i) => setter(translations[i]));
 
   return result;

@@ -87,7 +87,7 @@ async function startServer() {
       max: ENV.rateLimitGlobal,
       standardHeaders: true,
       legacyHeaders: false,
-      keyGenerator: ipKeyGenerator,
+      keyGenerator: (req) => ipKeyGenerator(req.ip ?? ""),
       handler: (_req, res) => {
         res.status(429).json({ message: "Zu viele Anfragen. Bitte warten Sie einen Moment." });
       },
@@ -102,7 +102,7 @@ async function startServer() {
       max: ENV.rateLimitAnalysis,
       standardHeaders: true,
       legacyHeaders: false,
-      keyGenerator: ipKeyGenerator,
+      keyGenerator: (req) => ipKeyGenerator(req.ip ?? ""),
       handler: (_req, res) => {
         res.status(429).json({ message: "Analyse-Limit erreicht. Bitte warten Sie eine Minute." });
       },
