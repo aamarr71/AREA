@@ -12,6 +12,7 @@ import { ENV } from "./env";
 import { logger, generateRequestId } from "../middleware/logger";
 import { sessionMiddleware } from "../middleware/session";
 import { runMigrations } from "../db/migrate";
+import { healthHandler } from "../routers/health";
 
 // Regex for static assets that bypass maintenance mode
 const STATIC_ASSET_RE = /\.(js|css|png|ico|svg|woff2?|ttf|map)$/i;
@@ -31,17 +32,10 @@ async function startServer() {
   // Trust Railway's proxy so req.ip is correct and rate-limit doesn't crash on IPv6
   app.set("trust proxy", 1);
 
-  // 1. Maintenance mode kill-switch (before everything else)
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!ENV.maintenanceMode) return next();
-    if (req.path.startsWith("/assets/") || STATIC_ASSET_RE.test(req.path)) return next();
-    res.status(503).json({ message: "AREA befindet sich in Wartung. Bitte versuchen Sie es später." });
-  });
-
-  // 2. Helmet security headers
+  // 1. Helmet security headers
   app.use(helmet());
 
-  // 3. CORS — explicit whitelist, credentials required for session cookies
+  // 2. CORS — explicit whitelist, credentials required for session cookies
   const allowedOrigins = ["https://area-production-773c.up.railway.app"];
   if (ENV.customDomain) allowedOrigins.push(`https://${ENV.customDomain}`);
   if (!ENV.isProduction) {
@@ -61,24 +55,8 @@ async function startServer() {
     })
   );
 
-  // 4. Request logging middleware
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    const requestId = generateRequestId();
-    const startMs = Date.now();
-    res.setHeader("X-Request-ID", requestId);
-    logger.info({ msg: "request_started", method: req.method, url: req.url, ip: req.ip, requestId });
-    res.on("finish", () => {
-      logger.info({
-        msg: "request_completed",
-        method: req.method,
-        url: req.url,
-        statusCode: res.statusCode,
-        durationMs: Date.now() - startMs,
-        requestId,
-      });
-    });
-    next();
-  });
+  // 3. Health check — before rate limiter, maintenance, and logging (no log spam, no rate-limit block)
+  app.get("/health", healthHandler);
 
   // 4. Global rate limiter (all routes)
   app.use(
@@ -109,14 +87,40 @@ async function startServer() {
     })
   );
 
-  // 6. Body parsers
+  // 6. Maintenance mode kill-switch (after health so the uptime monitor still gets through)
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!ENV.maintenanceMode) return next();
+    if (req.path.startsWith("/assets/") || STATIC_ASSET_RE.test(req.path)) return next();
+    res.status(503).json({ message: "AREA befindet sich in Wartung. Bitte versuchen Sie es später." });
+  });
+
+  // 7. Request logging middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const requestId = generateRequestId();
+    const startMs = Date.now();
+    res.setHeader("X-Request-ID", requestId);
+    logger.info({ msg: "request_started", method: req.method, url: req.url, ip: req.ip, requestId });
+    res.on("finish", () => {
+      logger.info({
+        msg: "request_completed",
+        method: req.method,
+        url: req.url,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startMs,
+        requestId,
+      });
+    });
+    next();
+  });
+
+  // 8. Body parsers
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-  // 7. Session middleware (Postgres-backed, signed cookie)
+  // 9. Session middleware (Postgres-backed, signed cookie)
   app.use(sessionMiddleware);
 
-  // 8. tRPC API
+  // 10. tRPC API
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -125,7 +129,7 @@ async function startServer() {
     })
   );
 
-  // 9. Frontend (Vite dev or static production)
+  // 11. Frontend (Vite dev or static production)
   if (!ENV.isProduction) {
     await setupVite(app, server);
   } else {
