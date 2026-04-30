@@ -5,24 +5,34 @@ export default function Impressum() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 container max-w-2xl py-16">
-        <h1 className="text-3xl font-semibold tracking-tight mb-2">Impressum</h1>
-        <p className="text-sm text-muted-foreground mb-12">Angaben gemäß § 5 ECG und § 25 MedienG</p>
+        <h1 className="text-xl font-semibold mb-1">Impressum</h1>
+        <p className="text-xs text-muted-foreground mb-10">Stand: April 2026</p>
 
-        <div className="space-y-10">
+        <p className="text-sm text-muted-foreground leading-normal mb-10">
+          Angaben gemäß § 5 des Bundesgesetzes, mit dem bestimmte rechtliche Aspekte des elektronischen Geschäfts- und Rechtsverkehrs geregelt werden (E-Commerce-Gesetz — ECG), BGBl I Nr. 152/2001 idgF, sowie gemäß § 25 des Bundesgesetzes über die Presse und andere publizistische Medien (Mediengesetz — MedienG), BGBl Nr. 314/1981 idgF.
+        </p>
+
+        <div className="space-y-0">
           <section>
-            <h2 className="text-lg font-semibold mb-3">Diensteanbieter</h2>
-            <p className="text-muted-foreground leading-relaxed">
+            <h2 className="text-base font-semibold mb-2">Diensteanbieter und Medieninhaber</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
               Amar Mujanović<br />
               Grenzackerstraße 17/5/12<br />
-              1100 Wien, Österreich
+              1100 Wien<br />
+              Republik Österreich
             </p>
           </section>
 
+          <hr className="border-border my-8" />
+
           <section>
-            <h2 className="text-lg font-semibold mb-3">Kontakt</h2>
-            <p className="text-muted-foreground leading-relaxed">
+            <h2 className="text-base font-semibold mb-2">Kontaktdaten</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
               E-Mail:{" "}
-              <a href="mailto:amuj71@icloud.com" className="text-foreground underline underline-offset-4 hover:text-primary transition-colors">
+              <a
+                href="mailto:amuj71@icloud.com"
+                className="underline underline-offset-4 hover:text-foreground transition-colors"
+              >
                 amuj71@icloud.com
               </a>
               <br />
@@ -30,54 +40,94 @@ export default function Impressum() {
             </p>
           </section>
 
+          <hr className="border-border my-8" />
+
           <section>
-            <h2 className="text-lg font-semibold mb-3">Tätigkeit</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Dienstleistungen in der automatischen Datenverarbeitung und Informationstechnik
+            <h2 className="text-base font-semibold mb-2">Unternehmensgegenstand</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              Dienstleistungen in der automatischen Datenverarbeitung und Informationstechnik gemäß § 2 Abs. 1 Z 14 der Bundeseinheitlichen Liste der freien Gewerbe (BLFG).
             </p>
           </section>
 
+          <hr className="border-border my-8" />
+
           <section>
-            <h2 className="text-lg font-semibold mb-3">Anwendbares Recht</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Österreichisches Recht
+            <h2 className="text-base font-semibold mb-2">Anwendbares Recht und Gerichtsstand</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              Es gilt ausschließlich österreichisches Recht unter Ausschluss der Verweisungsnormen des internationalen Privatrechts sowie des UN-Kaufrechts (CISG). Gerichtsstand für alle Streitigkeiten aus oder im Zusammenhang mit der Nutzung dieser Website ist, soweit gesetzlich zulässig, das sachlich zuständige Gericht in Wien.
             </p>
           </section>
 
+          <hr className="border-border my-8" />
+
           <section>
-            <h2 className="text-lg font-semibold mb-3">Aufsichtsbehörde (Datenschutz)</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Österreichische Datenschutzbehörde<br />
-              Barichgasse 40–42, 1030 Wien<br />
+            <h2 className="text-base font-semibold mb-2">Zuständige Aufsichtsbehörde (Datenschutz)</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              Österreichische Datenschutzbehörde (DSB)<br />
+              Barichgasse 40–42<br />
+              1030 Wien<br />
               <a
                 href="https://www.dsb.gv.at"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-foreground underline underline-offset-4 hover:text-primary transition-colors"
+                className="underline underline-offset-4 hover:text-foreground transition-colors"
               >
-                www.dsb.gv.at
+                https://www.dsb.gv.at
               </a>
             </p>
           </section>
 
+          <hr className="border-border my-8" />
+
           <section>
-            <h2 className="text-lg font-semibold mb-3">Haftungshinweis</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Die Inhalte dieser Website wurden mit größtmöglicher Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte übernehmen wir jedoch keine Gewähr. Die Nutzung der über AREA erstellten Analyse-Reports erfolgt auf eigenes Risiko. Die Reports stellen keine rechtsverbindliche Bewertung dar und ersetzen keine professionelle Immobilienbewertung oder Rechtsberatung.
+            <h2 className="text-base font-semibold mb-2">Grundlegende Richtung gemäß § 25 Abs. 4 MedienG</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              AREA ist eine webbasierte Softwarelösung zur automatisierten Qualitätsanalyse von Immobilien-Exposés. Die über diese Website bereitgestellten Inhalte dienen ausschließlich der Information gewerblicher Nutzer im Bereich der Immobilienwirtschaft und stellen weder eine Rechtsberatung noch eine Immobilienbewertung im Sinne des Liegenschaftsbewertungsgesetzes (LBG) dar.
             </p>
           </section>
 
+          <hr className="border-border my-8" />
+
           <section>
-            <h2 className="text-lg font-semibold mb-3">Urheberrecht</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Die auf dieser Website veröffentlichten Inhalte unterliegen dem österreichischen Urheberrecht. Jede vom Urheberrechtsgesetz nicht zugelassene Verwertung bedarf der vorherigen schriftlichen Zustimmung des Anbieters.
+            <h2 className="text-base font-semibold mb-2">Haftungsausschluss</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              Die auf dieser Website dargestellten Inhalte wurden mit größtmöglicher Sorgfalt erstellt. Der Diensteanbieter übernimmt jedoch keinerlei Gewähr für die Richtigkeit, Vollständigkeit, Aktualität oder jederzeitige Verfügbarkeit der bereitgestellten Informationen und Inhalte. Die Nutzung der über AREA bereitgestellten Analyse-Reports erfolgt auf eigenes Risiko des Nutzers. Insbesondere ersetzen die durch AREA generierten Berichte keine professionelle Immobilienbewertung durch einen zertifizierten Sachverständigen, keine Rechtsberatung durch einen zugelassenen Rechtsanwalt oder Notar und keine Steuerberatung durch einen Steuerberater oder Wirtschaftsprüfer. Der Diensteanbieter haftet nicht für Schäden, die aus der Nutzung oder Nichtnutzung der bereitgestellten Informationen entstehen, sofern kein nachweislich vorsätzliches oder grob fahrlässiges Verschulden vorliegt. Für die Inhalte verlinkter externer Websites übernimmt der Diensteanbieter keine Haftung; für die Inhalte der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
             </p>
           </section>
 
+          <hr className="border-border my-8" />
+
           <section>
-            <h2 className="text-lg font-semibold mb-3">Streitschlichtung</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen. AREA ist ein B2B-Produkt und richtet sich ausschließlich an gewerbliche Kunden.
+            <h2 className="text-base font-semibold mb-2">Urheberrecht und gewerbliche Schutzrechte</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              Sämtliche auf dieser Website veröffentlichten Inhalte, einschließlich Texte, Grafiken, Logos, Schriftarten, Software und deren Zusammenstellung, unterliegen dem Schutz des österreichischen Urheberrechtsgesetzes (UrhG) sowie gegebenenfalls weiterer gewerblicher Schutzrechte. Jede über die gesetzlich eingeräumten Schranken hinausgehende Nutzung, insbesondere die Vervielfältigung, Verbreitung, öffentliche Zugänglichmachung, Bearbeitung oder Verwertung zu gewerblichen Zwecken, bedarf der vorherigen schriftlichen Zustimmung des Diensteanbieters. Der Diensteanbieter macht hiermit von seinem Recht gemäß § 42h Abs. 6 UrhG Gebrauch, der Vervielfältigung zum Zweck des Text- und Data-Mining zu widersprechen. Dies umfasst insbesondere, jedoch nicht abschließend, das Verbot der Datenerfassung und -extraktion zum Zweck des Trainierens von Systemen künstlicher Intelligenz oder zur Entwicklung darauf basierender Softwareprodukte.
+            </p>
+          </section>
+
+          <hr className="border-border my-8" />
+
+          <section>
+            <h2 className="text-base font-semibold mb-2">Streitbeilegung</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              Der Diensteanbieter ist weder bereit noch verpflichtet, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle im Sinne des Alternative-Streitbeilegung-Gesetz (AStG) teilzunehmen. AREA ist ein Produkt für den geschäftlichen Verkehr (B2B) und richtet sich ausschließlich an gewerbliche Nutzer im Sinne des § 1 KSchG. Die Europäische Plattform zur Online-Streitbeilegung (OS-Plattform) ist erreichbar unter:{" "}
+              <a
+                href="https://ec.europa.eu/consumers/odr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-foreground transition-colors"
+              >
+                https://ec.europa.eu/consumers/odr
+              </a>{" "}
+              — eine Teilnahmeverpflichtung des Diensteanbieters besteht nicht.
+            </p>
+          </section>
+
+          <hr className="border-border my-8" />
+
+          <section>
+            <h2 className="text-base font-semibold mb-2">Salvatorische Klausel</h2>
+            <p className="text-sm text-muted-foreground leading-normal">
+              Sollten einzelne Bestimmungen dieses Impressums unwirksam sein oder werden, so wird die Wirksamkeit der übrigen Bestimmungen hiervon nicht berührt. An die Stelle der unwirksamen Bestimmung tritt die jeweils einschlägige gesetzliche Regelung.
             </p>
           </section>
         </div>
