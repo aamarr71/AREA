@@ -39,6 +39,7 @@ interface AnalysisData {
   stufe_1_extraktion?: any;
   stufe_2_qualitaetspruefung?: any;
   stufe_3_verkaufsstrategie?: any;
+  standortdaten?: any;
 }
 
 const severityColor = (s: string) => {
@@ -139,6 +140,77 @@ function SectionHeader({ icon, title, index }: { icon: React.ReactNode; title: s
       </div>
       <h3 className="text-lg font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>{title}</h3>
     </motion.div>
+  );
+}
+
+function FehlendeAngabeItem({ f, lang }: { f: any; lang: Lang }) {
+  const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const hasRechtKonsequenz = !!(f.rechtsgrundlage && f.konsequenz);
+  const hasTextbaustein = !!f.textbaustein;
+
+  const feld = (f.feld ?? "").toLowerCase();
+  const grund = (f.grund ?? "").toLowerCase();
+  const links: { href: string; label: string }[] = [];
+  if (feld.includes("energieausweis")) {
+    links.push({ href: "https://www.wko.at/service/wirtschaftsrecht-gewerberecht/energieausweis-pflichten", label: "WKO: Energieausweis-Pflichten" });
+  }
+  if (feld.includes("provision") || feld.includes("makler") || grund.includes("provision") || grund.includes("makler")) {
+    links.push({ href: "https://www.wko.at/branchen/information-consulting/immobilien-vermoegenstreuhaender/provision", label: "WKO: Provisionsregelung" });
+  }
+  if (feld.includes("hochwasser") || feld.includes("hora") || grund.includes("hochwasser") || grund.includes("hora")) {
+    links.push({ href: "https://hora.gv.at/", label: "HORA: Naturgefahren-Check" });
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(f.textbaustein ?? "");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renderTextbaustein = (text: string) =>
+    text.split(/(__)/g).map((part, i) =>
+      part === "__"
+        ? <span key={i} className="bg-primary/20 px-1 rounded">__</span>
+        : part
+    );
+
+  return (
+    <div className="py-2 px-3 rounded-md bg-secondary/50">
+      <div className="flex items-center gap-3">
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${relevanzColor(f.relevanz)}`}>{tAmpel(f.relevanz, lang)}</span>
+        <span className="font-mono text-sm">{f.feld}</span>
+        <span className="text-xs text-muted-foreground flex-1">{f.grund}</span>
+      </div>
+      {links.length > 0 && (
+        <div className="flex flex-wrap gap-3 mt-1">
+          {links.map((link, i) => (
+            <a key={i} href={link.href} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">
+              {link.label} ↗
+            </a>
+          ))}
+        </div>
+      )}
+      {hasRechtKonsequenz && (
+        <div className="mt-1">
+          <button onClick={() => setExpanded(!expanded)} className="text-xs text-muted-foreground cursor-pointer">
+            {expanded ? "▾" : "▸"} {t("rechtsgrundlage_konsequenz", lang)}
+          </button>
+          {expanded && (
+            <p className="text-xs text-muted-foreground pl-4 mt-1">{f.rechtsgrundlage} — {f.konsequenz}</p>
+          )}
+        </div>
+      )}
+      {hasTextbaustein && (
+        <div className="bg-muted/30 rounded px-3 py-2 mt-2 flex items-center justify-between gap-2">
+          <span className="text-xs font-mono">{renderTextbaustein(f.textbaustein)}</span>
+          <button onClick={handleCopy} className="text-xs text-primary hover:underline cursor-pointer shrink-0 min-h-[44px] min-w-[60px] flex items-center justify-end">
+            {copied ? t("textbaustein_kopiert", lang) : t("textbaustein_kopieren", lang)}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -418,11 +490,7 @@ export default function AnalysisReport({ data, analysisId }: { data: AnalysisDat
               ))
             ) : (
               qual?.fehlende_angaben?.map((f: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-md bg-secondary/50">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${relevanzColor(f.relevanz)}`}>{tAmpel(f.relevanz, lang)}</span>
-                  <span className="font-mono text-sm">{f.feld}</span>
-                  <span className="text-xs text-muted-foreground flex-1">{f.grund}</span>
-                </div>
+                <FehlendeAngabeItem key={i} f={f} lang={lang} />
               ))
             )}
           </div>
@@ -457,8 +525,74 @@ export default function AnalysisReport({ data, analysisId }: { data: AnalysisDat
         )}
       </motion.div>
 
+      {/* STANDORT & WIDMUNG */}
+      {display.standortdaten && (
+        <motion.div className="bg-card border border-border rounded-lg p-6" custom={3} initial="hidden" animate="visible" variants={fadeIn}>
+          <SectionHeader icon={<MapPin className="w-4 h-4" />} title={t("standort_widmung", lang)} index={3} />
+          {display.standortdaten.geocoding && (
+            <div className="mb-4">
+              <p className="text-base font-medium">📍 {display.standortdaten.geocoding.displayName}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("koordinaten", lang)}: {display.standortdaten.geocoding.lat.toFixed(4)}, {display.standortdaten.geocoding.lng.toFixed(4)} (Confidence: {display.standortdaten.geocoding.confidence})
+              </p>
+              {display.standortdaten.geocoding.confidence === "low" && (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> {t("adresse_ungenau", lang)}
+                </p>
+              )}
+            </div>
+          )}
+          {display.standortdaten.flaechenwidmung && (
+            <div className="mb-4">
+              <div className="space-y-1 text-sm">
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">{t("flaechenwidmung", lang)}:</span>
+                  {loading ? <Skel w="32" /> : (
+                    <span className="font-medium">{display.standortdaten.flaechenwidmung.kategorie} ({display.standortdaten.flaechenwidmung.kurzbezeichnung})</span>
+                  )}
+                </div>
+                {display.standortdaten.flaechenwidmung.bauklasse && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground w-36 shrink-0">{t("bauklasse", lang)}:</span>
+                    <span>{display.standortdaten.flaechenwidmung.bauklasse}</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">{t("schutzzone", lang)}:</span>
+                  <span>{display.standortdaten.flaechenwidmung.schutzzone ? t("ja", lang) : t("nein", lang)}</span>
+                </div>
+                {display.standortdaten.flaechenwidmung.plandokument && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground w-36 shrink-0">{t("plandokument", lang)}:</span>
+                    <span className="font-mono">{display.standortdaten.flaechenwidmung.plandokument}</span>
+                  </div>
+                )}
+              </div>
+              <a
+                href="https://www.wien.gv.at/flaechenwidmung/public/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-3 text-xs text-primary underline"
+              >
+                {t("fwplan_oeffnen", lang)} ↗
+              </a>
+            </div>
+          )}
+          {display.standortdaten.widerspruch && (
+            <div className="border-l-4 border-[#E63946] bg-[#E63946]/5 p-3 rounded">
+              <p className="text-sm font-semibold text-[#E63946] uppercase tracking-wide mb-1">
+                ⚠️ {t("widmungs_widerspruch", lang)}
+              </p>
+              {loading ? <SkelLines lines={2} /> : (
+                <p className="text-sm text-foreground">{display.standortdaten.widerspruch.beschreibung}</p>
+              )}
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {/* STUFE 3: Verkaufsstrategie */}
-      <motion.div className="bg-card border border-border rounded-lg p-6" custom={3} initial="hidden" animate="visible" variants={fadeIn}>
+      <motion.div className="bg-card border border-border rounded-lg p-6" custom={4} initial="hidden" animate="visible" variants={fadeIn}>
         <SectionHeader icon={<Target className="w-4 h-4" />} title={t("verkaufsstrategie", lang)} index={3} />
 
         {/* Zielgruppen */}

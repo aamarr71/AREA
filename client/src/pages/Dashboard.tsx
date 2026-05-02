@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, ExternalLink, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, X, FileDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import { triggerPrint } from "@/lib/exportPdf";
 import AnalysisReport from "@/components/AnalysisReport";
 
 function formatTimestamp(d: Date): string {
@@ -30,6 +31,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function Dashboard() {
   const [openId, setOpenId] = useState<number | null>(null);
+  const [printOnLoad, setPrintOnLoad] = useState(false);
 
   const historyQuery = trpc.analysis.history.useQuery();
   const detailQuery = trpc.analysis.byId.useQuery(
@@ -39,9 +41,26 @@ export default function Dashboard() {
 
   const rows = historyQuery.data ?? [];
 
+  // Trigger print once detail data is loaded (used when PDF button was clicked)
+  useEffect(() => {
+    if (printOnLoad && detailQuery.isSuccess && detailQuery.data?.result) {
+      const t = setTimeout(() => {
+        triggerPrint();
+        setPrintOnLoad(false);
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [printOnLoad, detailQuery.isSuccess, detailQuery.data]);
+
+  const handlePdfClick = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPrintOnLoad(true);
+    setOpenId(id);
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
+      <header className="border-b border-border print:hidden">
         <div className="container flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -53,7 +72,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container py-8 space-y-6">
+      <main className="container py-8 space-y-6 print:hidden">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
             Analyse-History
@@ -81,6 +100,7 @@ export default function Dashboard() {
                   <th className="text-left p-3 font-medium text-muted-foreground">URL</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                   <th className="text-right p-3 font-medium text-muted-foreground">Dauer</th>
+                  <th className="text-right p-3 font-medium text-muted-foreground"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -107,6 +127,22 @@ export default function Dashboard() {
                     <td className="p-3 text-xs text-muted-foreground text-right tabular-nums">
                       {r.durationMs != null ? `${(r.durationMs / 1000).toFixed(1)}s` : "—"}
                     </td>
+                    <td className="p-3 text-right">
+                      {r.status === "success" && (
+                        <button
+                          onClick={(e) => handlePdfClick(r.id, e)}
+                          title="PDF exportieren"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-muted"
+                        >
+                          {printOnLoad && openId === r.id && !detailQuery.isSuccess ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <FileDown className="w-3.5 h-3.5" />
+                          )}
+                          PDF
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -117,9 +153,9 @@ export default function Dashboard() {
 
       {/* Detail modal */}
       {openId !== null && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto p-4">
-          <div className="bg-background border border-border rounded-xl shadow-lg max-w-5xl w-full my-8">
-            <div className="sticky top-0 bg-background border-b border-border px-6 py-3 flex items-center justify-between rounded-t-xl">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto p-4 print:static print:block print:bg-transparent print:p-0">
+          <div className="bg-background border border-border rounded-xl shadow-lg max-w-5xl w-full my-8 print:max-w-none print:my-0 print:border-none print:shadow-none print:rounded-none">
+            <div className="sticky top-0 bg-background border-b border-border px-6 py-3 flex items-center justify-between rounded-t-xl print:hidden">
               <div className="flex items-center gap-3 min-w-0">
                 <h3 className="text-sm font-medium truncate">
                   {detailQuery.data?.url ?? "Lädt…"}
@@ -135,15 +171,28 @@ export default function Dashboard() {
                   </a>
                 )}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setOpenId(null)}>
-                <X className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {detailQuery.data?.result && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => triggerPrint()}
+                    className="gap-1.5 text-xs"
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    PDF
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => { setOpenId(null); setPrintOnLoad(false); }}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-            <div className="p-6">
+            <div className="p-6 print:p-0">
               {detailQuery.isLoading ? (
                 <p className="text-sm text-muted-foreground">Lädt…</p>
               ) : detailQuery.data?.result ? (
-                <AnalysisReport data={detailQuery.data.result} />
+                <AnalysisReport data={detailQuery.data.result} analysisId={openId} />
               ) : (
                 <p className="text-sm text-muted-foreground">Kein Report verfügbar.</p>
               )}

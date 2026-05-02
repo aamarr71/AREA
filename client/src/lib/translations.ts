@@ -36,6 +36,21 @@ const de = {
   tage: "Tage",
   kurz_expose: "Optimiertes Kurz-Exposé",
   zeichen: "Zeichen",
+  standort_widmung: "Standort & Widmung",
+  flaechenwidmung: "Flächenwidmung",
+  bauklasse: "Bauklasse",
+  schutzzone: "Schutzzone",
+  plandokument: "Plandokument",
+  widmungs_widerspruch: "Widmungs-Widerspruch",
+  koordinaten: "Koordinaten",
+  rechtsgrundlage_konsequenz: "Rechtsgrundlage & Konsequenz",
+  textbaustein_kopieren: "Kopieren",
+  textbaustein_kopiert: "✓ Kopiert",
+  fwplan_oeffnen: "Flächenwidmungsplan öffnen",
+  adresse_ungenau: "Adresse konnte nur ungenau verortet werden. Widmungsdaten können abweichen.",
+  widmung_nur_wien: "Flächenwidmungsabfrage ist derzeit nur für Wien verfügbar.",
+  ja: "Ja",
+  nein: "Nein",
 };
 
 export type TranslationKey = keyof typeof de;
@@ -76,6 +91,21 @@ const en: Record<TranslationKey, string> = {
   tage: "Days",
   kurz_expose: "Optimised Short Listing",
   zeichen: "Characters",
+  standort_widmung: "Location & Zoning",
+  flaechenwidmung: "Zoning Classification",
+  bauklasse: "Building Class",
+  schutzzone: "Conservation Area",
+  plandokument: "Plan Document",
+  widmungs_widerspruch: "Zoning Conflict",
+  koordinaten: "Coordinates",
+  rechtsgrundlage_konsequenz: "Legal Basis & Consequence",
+  textbaustein_kopieren: "Copy",
+  textbaustein_kopiert: "✓ Copied",
+  fwplan_oeffnen: "Open Zoning Map",
+  adresse_ungenau: "Address could only be approximately located. Zoning data may be inaccurate.",
+  widmung_nur_wien: "Zoning query is currently only available for Vienna.",
+  ja: "Yes",
+  nein: "No",
 };
 
 const strings: Record<Lang, Record<TranslationKey, string>> = { de, en };

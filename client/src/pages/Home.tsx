@@ -25,6 +25,7 @@ import {
 import AnalysisReport from "@/components/AnalysisReport";
 import ProgressBar from "@/components/ProgressBar";
 import { trpc } from "@/lib/trpc";
+import { triggerPrint } from "@/lib/exportPdf";
 
 const ANALYSE_PHASES = [
   { label: "Exposé wird geladen...", until: 30 },
@@ -159,7 +160,7 @@ export default function Home() {
   };
 
   const handleExportPDF = () => {
-    window.print();
+    triggerPrint();
   };
 
   return (

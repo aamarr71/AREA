@@ -314,6 +314,9 @@ export async function translateAnalysis(data: any): Promise<any> {
   (rq?.fehlende_angaben ?? []).forEach((f: any) => {
     add(f.feld, (v) => { f.feld = v; });
     add(f.grund, (v) => { f.grund = v; });
+    add(f.rechtsgrundlage, (v) => { f.rechtsgrundlage = v; });
+    add(f.konsequenz, (v) => { f.konsequenz = v; });
+    add(f.textbaustein, (v) => { f.textbaustein = v; });
   });
 
   // Stufe 2 — Schwächen
@@ -349,6 +352,15 @@ export async function translateAnalysis(data: any): Promise<any> {
 
   // Stufe 3 — Kurz-Exposé
   add(rs?.optimiertes_kurz_expose, (v) => { rs.optimiertes_kurz_expose = v; });
+
+  // Standortdaten (Flächenwidmung + Widerspruch)
+  const sd = result.standortdaten;
+  if (sd?.flaechenwidmung?.kategorie) {
+    add(sd.flaechenwidmung.kategorie, (v) => { sd.flaechenwidmung.kategorie = v; });
+  }
+  if (sd?.widerspruch?.beschreibung) {
+    add(sd.widerspruch.beschreibung, (v) => { sd.widerspruch.beschreibung = v; });
+  }
 
   if (toTranslate.length === 0) return result;
 

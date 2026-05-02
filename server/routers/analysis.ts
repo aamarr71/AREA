@@ -10,6 +10,8 @@ import { fetchWithRetry } from "../middleware/fetchWithRetry";
 import { recordAnalysis } from "../middleware/metrics";
 import { getCached, setCache } from "../middleware/cache";
 import { translateAnalysis } from "../middleware/deepseek";
+import { geocodeAddress } from "../middleware/geocoding";
+import { getWidmung, checkWidmungsWiderspruch } from "../middleware/flaechenwidmung";
 import { db } from "../db/connection";
 import { analyses } from "../db/schema";
 
@@ -98,6 +100,45 @@ export const analysisRouter = router({
           return JSON.parse(clean);
         };
 
+        // Enrich result with Standortdaten (geocoding + Flächenwidmung) — non-blocking
+        const enrichWithStandortdaten = async (result: any): Promise<any> => {
+          try {
+            const adresse = result?.stufe_1_extraktion?.adresse;
+            if (!adresse) return result;
+
+            const { strasse, plz, bezirk } = adresse;
+            const queryParts = [strasse, plz ? `${plz} Wien` : bezirk ? `${bezirk}, Wien` : "Wien", "Austria"].filter(Boolean);
+            const queryStr = queryParts.join(", ");
+
+            const geo = await geocodeAddress(queryStr);
+            if (!geo) return result;
+
+            const widmung = await getWidmung(geo.lat, geo.lng);
+            const typ: string = result?.stufe_1_extraktion?.typ ?? "";
+            const widerspruch = widmung ? checkWidmungsWiderspruch(typ, widmung) : null;
+
+            return {
+              ...result,
+              standortdaten: {
+                geocoding: { lat: geo.lat, lng: geo.lng, displayName: geo.displayName, confidence: geo.confidence },
+                flaechenwidmung: widmung
+                  ? {
+                      kategorie: widmung.kategorie,
+                      bauklasse: widmung.bauklasse,
+                      kurzbezeichnung: widmung.kurzbezeichnung,
+                      schutzzone: widmung.schutzzone,
+                      plandokument: widmung.plandokument,
+                    }
+                  : null,
+                widerspruch,
+              },
+            };
+          } catch (err: any) {
+            logger.warn({ msg: "standortdaten_error", error: err?.message });
+            return result;
+          }
+        };
+
         const persistSuccess = async (result: any, format: string): Promise<number | null> => {
           if (pageHash) setCache(input.url, pageHash, result);
           recordAnalysis({
@@ -131,7 +172,7 @@ export const analysisRouter = router({
         const responsesText = data?.output?.[0]?.content?.[0]?.text;
         if (typeof responsesText === "string") {
           logger.info({ msg: "parser_result", format: "shape_1_responses_api" });
-          const result = safeParse(responsesText);
+          const result = await enrichWithStandortdaten(safeParse(responsesText));
           const id = await persistSuccess(result, "shape_1");
           return { _areaId: id ?? undefined, ...result };
         }
@@ -141,7 +182,7 @@ export const analysisRouter = router({
           ?? data?.choices?.[0]?.message?.content;
         if (typeof chatText === "string") {
           logger.info({ msg: "parser_result", format: "shape_2_chat_completions" });
-          const result = safeParse(chatText);
+          const result = await enrichWithStandortdaten(safeParse(chatText));
           const id = await persistSuccess(result, "shape_2");
           return { _areaId: id ?? undefined, ...result };
         }
@@ -149,7 +190,7 @@ export const analysisRouter = router({
         // Shape 3: n8n simplified — direct text field
         if (typeof data?.text === "string") {
           logger.info({ msg: "parser_result", format: "shape_3_n8n_text" });
-          const result = safeParse(data.text);
+          const result = await enrichWithStandortdaten(safeParse(data.text));
           const id = await persistSuccess(result, "shape_3");
           return { _areaId: id ?? undefined, ...result };
         }
@@ -157,7 +198,7 @@ export const analysisRouter = router({
         // Shape 4: n8n langchain — output as string
         if (typeof data?.output === "string") {
           logger.info({ msg: "parser_result", format: "shape_4_langchain" });
-          const result = safeParse(data.output);
+          const result = await enrichWithStandortdaten(safeParse(data.output));
           const id = await persistSuccess(result, "shape_4");
           return { _areaId: id ?? undefined, ...result };
         }
@@ -165,8 +206,9 @@ export const analysisRouter = router({
         // Shape 5: already parsed JSON
         if (data?.meta && data?.stufe_1_extraktion) {
           logger.info({ msg: "parser_result", format: "shape_5_parsed_json" });
-          const id = await persistSuccess(data, "shape_5");
-          return { _areaId: id ?? undefined, ...data };
+          const result = await enrichWithStandortdaten(data);
+          const id = await persistSuccess(result, "shape_5");
+          return { _areaId: id ?? undefined, ...result };
         }
 
         // Shape 6: async webhook misconfiguration
