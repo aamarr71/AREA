@@ -1,0 +1,6 @@
+[features]
+codex_hooks = true
+
+[mcp_servers.area_context]
+command = "node"
+args = ["--import", "tsx", "mcp/area-context-server/src/server.ts"]

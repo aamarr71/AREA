@@ -1,0 +1,67 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env node .codex/hooks/session_start_context.js",
+            "timeout": 30,
+            "statusMessage": "Loading AREA project context"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env node .codex/hooks/user_prompt_context_search.js",
+            "timeout": 30,
+            "statusMessage": "Searching AREA context"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env node .codex/hooks/pre_tool_policy.js",
+            "timeout": 30,
+            "statusMessage": "Checking AREA tool policy"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env node .codex/hooks/post_tool_context_update.js",
+            "timeout": 30,
+            "statusMessage": "Recording AREA context observation"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env node .codex/hooks/stop_memory_proposal.js",
+            "timeout": 30,
+            "statusMessage": "Preparing AREA memory proposal"
+          }
+        ]
+      }
+    ]
+  }
+}

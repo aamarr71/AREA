@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "area_context": {
+      "command": "node",
+      "args": ["--import", "tsx", "mcp/area-context-server/src/server.ts"]
+    }
+  }
+}

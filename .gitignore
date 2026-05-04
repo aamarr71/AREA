@@ -17,6 +17,7 @@ build/
 # IDE and editor files
 .vscode/
 .idea/
+.claude/settings.local.json
 *.swp
 *.swo
 *~
@@ -105,6 +106,7 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+context-store/local/*.jsonl
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/

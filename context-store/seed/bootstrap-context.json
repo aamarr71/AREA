@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ctx_bootstrap_area_kernel_mission",
+    "namespace": "project_facts",
+    "title": "AREA Context Kernel is the agent infrastructure priority",
+    "source_ref": "AREA Codex Instructions 2026-05-04 sections 1 and 5"
+  },
+  {
+    "id": "ctx_bootstrap_smallest_slice",
+    "namespace": "current_state",
+    "title": "Build the smallest reliable Context Kernel slice first",
+    "source_ref": "AREA Codex Instructions 2026-05-04 section 16"
+  },
+  {
+    "id": "ctx_bootstrap_store_contract",
+    "namespace": "architecture_decisions",
+    "title": "Context items must be structured and source referenced",
+    "source_ref": "AREA Codex Instructions 2026-05-04 sections 5.3 and 5.4"
+  }
+]
