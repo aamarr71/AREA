@@ -65,11 +65,68 @@ Do not store secrets, access tokens, passwords, API keys, OAuth tokens, raw cred
 
 ### 2.8 Session memory is mandatory
 
-Before ending any session, call `context.session_summary` with a complete
-summary of what changed, what was decided, what is open, and what the next
-session needs to know. This is not optional. Skipping this step means the
-next session starts blind. The Stop hook will warn if no session summary
-was recorded.
+Every session produces knowledge that the next session needs. Losing that knowledge means the next session writes code based on incomplete or wrong assumptions. This section exists to prevent that.
+
+### 2.8.1 When to write the session summary
+
+Call context.session_summary BEFORE you write your final response to the user. Not after. Not "at the end." Before the final message. The Stop hook is a safety net that checks whether a summary exists — it does not write one for you. If the Stop hook reports session_summary_found: false, you have failed this rule.
+If you are interrupted, timed out, or encounter an error that prevents further work, write the session summary immediately with whatever you have. A partial summary is infinitely better than no summary.
+
+### 2.8.2 What the session summary must contain
+
+Every field is mandatory. Do not leave arrays empty unless genuinely nothing applies.
+
+context.session_summary({
+  summary: "...",           // What happened in this session. Minimum 2-3 sentences.
+                            // Include: what the user asked for, what you did, what the outcome was.
+  
+  decisions: ["..."],       // Every architecture, product, technical, or workflow decision made.
+                            // Include decisions you made autonomously (e.g. "chose X over Y because Z").
+                            // Include decisions the user made (e.g. "user decided to use Magic Links").
+  
+  changes: ["..."],         // Every file you created, modified, or deleted. Be specific.
+                            // Use paths: "server/routers/auth.ts" not "the auth router".
+  
+  open_items: ["..."],      // What is unfinished, blocked, broken, or needs follow-up.
+                            // Include known bugs you noticed but did not fix.
+                            // Include things the user mentioned but you did not address.
+  
+  next_session_needs: "..." // The single most important thing the next session must know
+                            // before doing anything. Write this as if you are briefing a colleague
+                            // who has never seen this project. What would they need to know first?
+                            // If there is a critical blocker or risk, this is where it goes.
+  
+  tags: ["..."]             // At minimum: the primary area of work.
+                            // Examples: ["auth", "phase-2"], ["pdf-export", "bugfix"],
+                            // ["context-kernel", "infrastructure"], ["frontend", "dashboard"]
+})
+
+### 2.8.3 Quality standard
+
+Ask yourself: if you read this summary at the start of the next session with zero other context, would you know exactly what happened and what to do next? If not, the summary is insufficient. Rewrite it.
+
+Bad example:
+summary: "Worked on auth."
+decisions: []
+changes: ["some files"]
+open_items: []
+next_session_needs: "Continue auth work."
+
+Good example:
+summary: "Implemented Magic Link auth flow. Created server/routers/auth.ts with sendMagicLink and verifyMagicLink procedures. sendMagicLink generates a JWT token, stores it in the magic_links table with 15min expiry, and sends it via Resend. verifyMagicLink validates the token, creates a session, and returns a session cookie. Frontend login page at client/src/pages/Login.tsx sends email, shows confirmation screen, handles the callback URL."
+decisions: ["Magic Links over password auth — simpler UX, less security surface", "Resend for email delivery — already used in SmartShift, free tier sufficient", "JWT with 15min expiry for magic link tokens", "HttpOnly session cookie, not localStorage"]
+changes: ["server/routers/auth.ts (created)", "server/db/schema/magic_links.ts (created)", "server/db/schema/sessions.ts (created)", "client/src/pages/Login.tsx (created)", "client/src/App.tsx (added /login route)", "server/_core/index.ts (added session middleware)"]
+open_items: ["Session expiry/refresh not implemented yet", "No logout endpoint", "Rate limiting on sendMagicLink needed to prevent abuse", "pnpm run check still fails on existing type gaps"]
+next_session_needs: "Auth flow works end-to-end but has no session refresh, no logout, and no rate limiting. The magic_links table has no cleanup job for expired tokens. These must be addressed before any dashboard work begins."
+tags: ["auth", "phase-2", "magic-link"]
+
+### 2.8.4 When code changes but no summary is written
+
+If you change ANY file in the repository and do not write a session summary, the Context Store becomes stale. The next session will work with outdated architecture knowledge and may produce code that conflicts with your changes. This is the single worst failure mode of this system.
+
+### 2.8.5 Updating stale context
+
+If during your work you discover that an existing context item in the store is wrong or outdated (e.g. a router was renamed, a schema changed, a decision was reversed), call context.propose_update or context.log_decision to correct it. Do not leave wrong facts in the store.
 
 ### 2.9 Commit and push after every task
 
@@ -79,6 +136,25 @@ and push to the current branch. Use the SSH key at ~/.ssh/area_github:
 GIT_SSH_COMMAND='ssh -i ~/.ssh/area_github -o IdentitiesOnly=yes' git push
 
 Do not leave changes uncommitted. Do not wait for the user to commit or push.
+
+### 2.10 Project context document is authoritative for product and business decisions
+
+The file docs/PROJECT_CONTEXT_AREA_AI_AGENT.md contains the founder's product vision, business strategy, target group, feature decisions, and strategic direction for AREA. This document is authoritative — it overrides any assumptions you might make about what AREA should be or do.
+Before any product, UX, feature, or business-facing work:
+
+Read docs/PROJECT_CONTEXT_AREA_AI_AGENT.md.
+Verify that your planned work aligns with the documented product direction.
+If your work contradicts the document, stop and ask the user.
+
+Key facts from this document that you must never contradict:
+
+AREA is a B2B tool for small real-estate agencies, not a consumer product.
+AREA has two modes: "Inserat analysieren" (URL analysis) and "Exposé vorbereiten" (pre-publication preparation).
+AI text generation is an explicit opt-in action, never automatic or forced.
+AREA is one module inside a planned broader AI agent platform, not a standalone product.
+The founder's business model is operating services for clients, not selling software licenses.
+
+If the document is updated, the updated version is the new authority.
 
 ---
 

@@ -159,5 +159,27 @@ export function createBootstrapItems(): ContextItem[] {
       embedding: null,
       metadata: { bootstrap: true },
     },
+    {
+      id: "ctx_bootstrap_area_product_vision",
+      namespace: "product_decisions",
+      type: "bootstrap_fact",
+      title: "AREA Product Vision und Business-Strategie",
+      body: "AREA ist ein B2B Tool für kleine Immobilienbüros und Einzelmakler, primär in Österreich/Wien. Es hat zwei Modi: 'Inserat analysieren' (URL-Analyse bestehender Listings) und 'Exposé vorbereiten' (Vorbereitung vor Veröffentlichung). KI-Textgenerierung ist opt-in, nie automatisch. AREA ist ein Modul innerhalb einer geplanten breiteren AI-Agent-Plattform für Makler (Telefonie, WhatsApp, Terminplanung, Follow-ups). Das Geschäftsmodell ist Services betreiben, nicht Software verkaufen. Vollständige Produktstrategie liegt in docs/PROJECT_CONTEXT_AREA_AI_AGENT.md.",
+      summary: "AREA ist ein B2B Makler-Tool mit zwei Modi (Inserat analysieren, Exposé vorbereiten), Teil einer geplanten AI-Agent-Plattform. KI-Text ist opt-in. Zielgruppe: kleine Makler in AT/Wien.",
+      tags: ["area", "product", "vision", "strategy", "business-model"],
+      sourceType: "file",
+      sourceRef: "docs/PROJECT_CONTEXT_AREA_AI_AGENT.md",
+      sourceUrlOrFile: null,
+      confidence: 0.95,
+      status: "accepted",
+      createdAt: now,
+      updatedAt: now,
+      expiresAt: null,
+      supersedesId: null,
+      version: 1,
+      embedding: null,
+      metadata: { bootstrap: true },
+    },
   ];
 }
+
