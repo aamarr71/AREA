@@ -189,4 +189,21 @@ export const mcpTools = [
       },
     },
   },
+  {
+    name: "context.session_summary",
+    description: "Write an accepted end-of-session AREA memory summary for future sessions.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["summary", "next_session_needs"],
+      properties: {
+        summary: { type: "string", minLength: 10 },
+        decisions: { type: "array", items: { type: "string" }, default: [] },
+        changes: { type: "array", items: { type: "string" }, default: [] },
+        open_items: { type: "array", items: { type: "string" }, default: [] },
+        next_session_needs: { type: "string", minLength: 1 },
+        tags: { type: "array", items: { type: "string" }, default: [] },
+      },
+    },
+  },
 ] as const;

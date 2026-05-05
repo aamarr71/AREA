@@ -51,13 +51,16 @@ function toSearchResult(item: ContextItem, query: string): ContextSearchResult {
   return {
     id: item.id,
     namespace: item.namespace,
+    type: item.type,
     title: item.title,
     summary: item.summary,
     body_excerpt: summarize(item.body, 360),
     score: scoreItem(item, query),
     confidence: item.confidence,
     status: item.status,
+    tags: item.tags,
     source_ref: item.sourceRef,
+    updated_at: item.updatedAt,
   };
 }
 
@@ -111,6 +114,10 @@ function cutoffFromSince(since: string): number {
 
 function includesSensitiveText(value: string): boolean {
   return SECRET_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+function bulletList(items: string[]): string {
+  return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : "- none";
 }
 
 async function collectFiles(repoRoot: string, requestedPaths: string[], maxFiles: number): Promise<string[]> {
@@ -168,13 +175,17 @@ export async function callContextTool(
       const items = await context.store.listItems();
       const accepted = items.filter((item) => item.status === "accepted");
       const sourceIds = accepted.slice(0, 12).map((item) => item.id);
+      const projectFactSummaries = accepted
+        .filter((item) => item.namespace === "project_facts")
+        .slice(0, 3)
+        .map((item) => item.summary);
       return {
         project: "AREA",
         summary:
-          accepted.find((item) => item.namespace === "project_facts")?.summary ??
+          projectFactSummaries.join(" ") ||
           "AREA project context is available, but no accepted project brief has been stored yet.",
         current_priorities: accepted
-          .filter((item) => item.namespace === "current_state")
+          .filter((item) => item.namespace === "current_state" && item.type !== "session_summary")
           .slice(0, 5)
           .map((item) => item.summary),
         architecture: accepted
@@ -218,7 +229,12 @@ export async function callContextTool(
         )
         .map((item) => toSearchResult(item, searchArgs.query))
         .filter((item) => item.score > 0)
-        .sort((a, b) => b.score - a.score || b.confidence - a.confidence)
+        .sort(
+          (a, b) =>
+            b.score - a.score ||
+            b.confidence - a.confidence ||
+            Date.parse(b.updated_at) - Date.parse(a.updated_at),
+        )
         .slice(0, searchArgs.limit);
       return { query: searchArgs.query, results };
     }
@@ -476,6 +492,41 @@ export async function callContextTool(
       };
       const written = await context.store.write(updated);
       return { id: written.id, status: written.status, version: written.version };
+    }
+
+    case "context.session_summary": {
+      const summaryArgs = args as {
+        summary: string;
+        decisions: string[];
+        changes: string[];
+        open_items: string[];
+        next_session_needs: string;
+        tags: string[];
+      };
+      const body = [
+        `Session Summary: ${summaryArgs.summary}`,
+        `Decisions:\n${bulletList(summaryArgs.decisions)}`,
+        `Changes:\n${bulletList(summaryArgs.changes)}`,
+        `Open Items:\n${bulletList(summaryArgs.open_items)}`,
+        `Next Session Needs: ${summaryArgs.next_session_needs}`,
+      ].join("\n\n");
+      if (includesSensitiveText(body)) {
+        throw new Error("Session summary may contain sensitive secret-like material; redact it first.");
+      }
+      const item = createContextItem({
+        namespace: "current_state",
+        type: "session_summary",
+        title: `Session Summary ${new Date().toISOString()}`,
+        body,
+        tags: Array.from(new Set(["session-summary", ...summaryArgs.tags])),
+        sourceType: "codex_session",
+        sourceRef: "context.session_summary",
+        confidence: 0.9,
+        status: "accepted",
+        metadata: summaryArgs,
+      });
+      const written = await context.store.write(item);
+      return { id: written.id, status: written.status, summary: written.summary };
     }
   }
 }

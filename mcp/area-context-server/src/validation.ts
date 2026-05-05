@@ -116,6 +116,17 @@ export const updateStatusInputSchema = z
   })
   .strict();
 
+export const sessionSummaryInputSchema = z
+  .object({
+    summary: z.string().min(10),
+    decisions: z.array(z.string()).default([]),
+    changes: z.array(z.string()).default([]),
+    open_items: z.array(z.string()).default([]),
+    next_session_needs: z.string().min(1),
+    tags: z.array(z.string()).default([]),
+  })
+  .strict();
+
 export const toolInputSchemas = {
   "context.healthcheck": healthcheckInputSchema,
   "context.get_project_brief": projectBriefInputSchema,
@@ -129,6 +140,7 @@ export const toolInputSchemas = {
   "context.get_area_domain_rules": areaDomainRulesInputSchema,
   "context.index_codebase": indexCodebaseInputSchema,
   "context.update_status": updateStatusInputSchema,
+  "context.session_summary": sessionSummaryInputSchema,
 } as const;
 
 export type ToolName = keyof typeof toolInputSchemas;

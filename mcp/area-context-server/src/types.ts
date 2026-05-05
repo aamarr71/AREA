@@ -51,13 +51,16 @@ export type ContextItem = {
 export type ContextSearchResult = {
   id: string;
   namespace: ContextNamespace;
+  type: string;
   title: string;
   summary: string;
   body_excerpt: string;
   score: number;
   confidence: number;
   status: ContextStatus;
+  tags: string[];
   source_ref: string;
+  updated_at: string;
 };
 
 export type ContextStoreHealth = {

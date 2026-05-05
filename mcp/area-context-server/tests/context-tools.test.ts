@@ -54,6 +54,15 @@ console.log("\nAREA context tools");
   )) as any;
   assert(result.project === "AREA", "project brief names AREA");
   assert(result.source_context_ids.length > 0, "project brief includes source context ids");
+  assert(result.summary.includes("AREA analysiert Immobilien-Exposés"), "project brief includes AREA product facts");
+  assert(
+    result.architecture.some((entry: string) => entry.includes("React/Vite/TypeScript")),
+    "project brief includes AREA stack facts",
+  );
+  assert(
+    result.current_priorities.some((entry: string) => entry.includes("Phase 2")),
+    "project brief includes AREA phase facts",
+  );
 }
 
 {
@@ -186,6 +195,54 @@ console.log("\nAREA context tools");
   )) as any;
   assert(result.status === "accepted", "update_status changes item status");
   assert(result.version === 2, "update_status increments item version");
+}
+
+{
+  const result = (await callContextTool(
+    "context.session_summary",
+    {
+      summary: "Implemented a durable session summary tool for AREA context continuity.",
+      decisions: ["Session summaries are accepted facts."],
+      changes: ["mcp/area-context-server/src/tools.ts"],
+      open_items: ["Wire summaries into production Postgres."],
+      next_session_needs: "Load session summaries at startup before planning.",
+      tags: ["test-summary"],
+    },
+    { store },
+  )) as any;
+  const item = (await store.fetch(result.id)) as ContextItem;
+  assert(result.status === "accepted", "session_summary returns accepted status");
+  assert(item.status === "accepted", "session_summary stores accepted item");
+  assert(item.tags.includes("session-summary"), "session_summary stores session-summary tag");
+}
+
+{
+  for (const index of [1, 2, 3]) {
+    await callContextTool(
+      "context.session_summary",
+      {
+        summary: `Session summary search fixture number ${index} with enough detail.`,
+        decisions: [`Decision ${index}`],
+        changes: [`Change ${index}`],
+        open_items: [`Open item ${index}`],
+        next_session_needs: `Next session needs fixture ${index}.`,
+        tags: ["search-fixture"],
+      },
+      { store },
+    );
+  }
+  const result = (await callContextTool(
+    "context.search",
+    {
+      query: "session-summary",
+      tags: ["session-summary"],
+      status: ["accepted"],
+      limit: 10,
+    },
+    { store },
+  )) as any;
+  const fixtureResults = result.results.filter((item: any) => item.tags.includes("search-fixture"));
+  assert(fixtureResults.length >= 3, "session summary search returns written summaries");
 }
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);
