@@ -1,22 +1,6 @@
-@import "tailwindcss";
-
-@theme inline {
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-body: Manrope, Verdana, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  --color-background: var(--area-paper);
-  --color-foreground: var(--area-ink);
-  --color-muted: rgba(15, 20, 25, 0.06);
-  --color-muted-foreground: var(--area-muted);
-  --color-border: var(--area-line);
-  --color-primary: var(--area-ink);
-  --color-primary-foreground: var(--area-paper);
-  --color-destructive: var(--area-red);
-  --shadow-hair: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --container-reading: 720px;
-  --container-editorial: 1100px;
-  --container-shell: 1280px;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --area-ink: #0f1419;
@@ -53,10 +37,6 @@ body {
   font-family: Manrope, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
-}
-
-#root {
-  min-height: 100vh;
 }
 
 ::selection {

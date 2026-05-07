@@ -1,39 +1,35 @@
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch, useLocation, Redirect } from "wouter";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
-import AdminDashboard from "./pages/AdminDashboard";
-import Impressum from "./pages/Impressum";
-import Datenschutz from "./pages/Datenschutz";
-import Login from "./pages/Login";
-import Invite from "./pages/Invite";
-import Dashboard from "./pages/Dashboard";
-import { useState, useEffect } from "react";
-import { trpc } from "@/lib/trpc";
+import { Route, Switch, Redirect, useLocation } from 'wouter';
+import ErrorBoundary from './components/ErrorBoundary';
+import { trpc } from './lib/trpc';
+import { LandingPage } from './pages/LandingPage';
+import { LoginPage, InvitePage } from './pages/AuthPages';
+import { DashboardPage } from './pages/DashboardPage';
+import { ReportViewPage } from './pages/ReportViewPage';
+import { AdminDashboard } from './pages/AdminDashboard';
+import Impressum from './pages/Impressum';
+import Datenschutz from './pages/Datenschutz';
 
 function MaintenanceScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-4 max-w-sm px-4">
-        <div className="w-12 h-12 bg-foreground rounded-xl flex items-center justify-center mx-auto">
-          <span className="text-background text-xl font-bold">⚡</span>
-        </div>
-        <h1 className="text-xl font-semibold tracking-tight">AREA befindet sich in Wartung</h1>
-        <p className="text-sm text-muted-foreground">Bitte versuchen Sie es später erneut.</p>
+    <main className="grid min-h-screen place-items-center px-6 text-center">
+      <div className="max-w-[420px] rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-8 shadow-hair">
+        <p className="font-display text-[34px] leading-tight text-[var(--area-ink)]">AREA befindet sich in Wartung</p>
+        <p className="mt-3 text-[14px] leading-6 text-[var(--area-muted)]">Bitte versuchen Sie es später erneut.</p>
       </div>
-    </div>
+    </main>
   );
 }
 
-/**
- * Routes that don't require auth. Everything else redirects to /login when
- * no session is present.
- */
+function LoadingScreen() {
+  return (
+    <main className="grid min-h-screen place-items-center font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
+      Lädt...
+    </main>
+  );
+}
+
 function isPublicPath(path: string): boolean {
-  return path === "/login" || path.startsWith("/invite/");
+  return path === '/' || path === '/login' || path === '/impressum' || path === '/datenschutz' || path.startsWith('/invite/');
 }
 
 function Router() {
@@ -43,64 +39,41 @@ function Router() {
     staleTime: 30_000,
   });
 
-  // Wait for the auth check before deciding what to render.
-  if (meQuery.isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Lädt…
-      </div>
-    );
+  if (meQuery.isLoading && !isPublicPath(location)) {
+    return <LoadingScreen />;
   }
 
   const me = meQuery.data;
 
-  // Not logged in → only public routes are reachable.
   if (!me && !isPublicPath(location)) {
     return <Redirect to="/login" />;
   }
 
-  // Logged in but on /login → bounce to home.
-  if (me && location === "/login") {
-    return <Redirect to="/" />;
+  if (me && location === '/login') {
+    return <Redirect to="/dashboard" />;
   }
 
   return (
     <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/invite/:token" component={Invite} />
-      <Route path="/" component={Home} />
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/invite/:token" component={InvitePage} />
+      <Route path="/dashboard/:id" component={ReportViewPage} />
+      <Route path="/dashboard" component={DashboardPage} />
       <Route path="/amar-stats" component={AdminDashboard} />
       <Route path="/impressum" component={Impressum} />
       <Route path="/datenschutz" component={Datenschutz} />
-      <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
+      <Route path="/" component={LandingPage} />
+      <Route component={LandingPage} />
     </Switch>
   );
 }
 
-function App() {
-  const [maintenance, setMaintenance] = useState(false);
-
-  // Global maintenance check on mount
-  useEffect(() => {
-    fetch("/api/trpc/health?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D")
-      .then((res) => {
-        if (res.status === 503) setMaintenance(true);
-      })
-      .catch(() => {
-        // Network error — don't block UI
-      });
-  }, []);
+export function App() {
+  const maintenance = false;
 
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          {maintenance ? <MaintenanceScreen /> : <Router />}
-        </TooltipProvider>
-      </ThemeProvider>
+      {maintenance ? <MaintenanceScreen /> : <Router />}
     </ErrorBoundary>
   );
 }

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/area-utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
@@ -24,17 +24,17 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-8 bg-background">
-          <div className="flex flex-col items-center w-full max-w-2xl p-8">
+        <div className="flex min-h-screen items-center justify-center bg-[var(--area-paper)] p-8">
+          <div className="flex w-full max-w-2xl flex-col items-center rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-8 shadow-hair">
             <AlertTriangle
               size={48}
-              className="text-destructive mb-6 flex-shrink-0"
+              className="mb-6 flex-shrink-0 text-[var(--area-red)]"
             />
 
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
+            <h2 className="mb-4 font-display text-[32px] leading-tight">Ein Fehler ist aufgetreten.</h2>
 
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
+            <div className="mb-6 w-full overflow-auto rounded-[6px] border border-[var(--area-line)] bg-[rgba(15,20,25,0.03)] p-4">
+              <pre className="whitespace-break-spaces font-mono text-[12px] text-[var(--area-muted)]">
                 {this.state.error?.stack}
               </pre>
             </div>
@@ -42,13 +42,13 @@ class ErrorBoundary extends Component<Props, State> {
             <button
               onClick={() => window.location.reload()}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg",
-                "bg-primary text-primary-foreground",
-                "hover:opacity-90 cursor-pointer"
+                "flex items-center gap-2 rounded-[6px] border border-[var(--area-ink)] px-4 py-2 font-mono text-[12px] uppercase tracking-[0.08em]",
+                "bg-[var(--area-ink)] text-[var(--area-paper)]",
+                "cursor-pointer hover:opacity-90"
               )}
             >
               <RotateCcw size={16} />
-              Reload Page
+              Neu laden
             </button>
           </div>
         </div>

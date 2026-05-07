@@ -1,393 +1,199 @@
-import { useState, useEffect } from "react";
-import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Link } from "wouter";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { ArrowLeft, RefreshCw, Trash2, UserPlus, Copy, Check, Power, Lock } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Copy, Check, Lock, Power, RefreshCw, Trash2, UserPlus } from 'lucide-react';
+import { content } from '../lib/content';
+import { cn, TodoText } from '../lib/area-utils';
+import { trpc } from '../lib/trpc';
+import { AppNav } from '../components/Navigation';
+import { Button } from '../components/Button';
+import { Modal } from '../components/Modal';
+import { FloatingInput } from '../components/FormField';
 
 const REFRESH_INTERVAL_MS = 30_000;
 
-function formatTimestamp(ts: number | Date | null | undefined): string {
-  if (ts === null || ts === undefined) return "—";
-  const d = ts instanceof Date ? ts : new Date(ts);
-  return d.toLocaleString("de-AT", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
-
-type Tab = "metrics" | "users";
-
-export default function AdminDashboard() {
-  const [tab, setTab] = useState<Tab>("metrics");
-  const [tick, setTick] = useState(0);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-
-  const meQuery = trpc.auth.me.useQuery();
-  const me = meQuery.data;
-  const isAdmin = me?.role === "admin";
-
-  // Auto-refresh every 30 seconds while admin is viewing the page
-  useEffect(() => {
-    if (!isAdmin) return;
-    const id = setInterval(() => setTick((t) => t + 1), REFRESH_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [isAdmin]);
-
-  const statsQuery = trpc.admin.stats.useQuery(undefined, {
-    enabled: isAdmin,
-    refetchInterval: false,
-  });
-  const errorsQuery = trpc.admin.errors.useQuery(
-    { limit: 20 },
-    { enabled: isAdmin, refetchInterval: false }
-  );
-  const usersQuery = trpc.admin.listUsers.useQuery(undefined, {
-    enabled: isAdmin,
-    refetchInterval: false,
-  });
-
-  const clearCacheMutation = trpc.admin.clearCache.useMutation();
-  const toggleUserMutation = trpc.admin.toggleUser.useMutation({
-    onSuccess: () => usersQuery.refetch(),
-  });
-
-  // Re-fetch on tick
-  useEffect(() => {
-    if (!isAdmin || tick === 0) return;
-    statsQuery.refetch();
-    errorsQuery.refetch();
-    if (tab === "users") usersQuery.refetch();
-  }, [tick]);
-
-  // ----- Auth gates -----
-  if (meQuery.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Lädt…</div>;
-  }
-  if (!me) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-full max-w-sm space-y-4 p-8 border border-border rounded-xl bg-card text-center">
-          <div className="w-12 h-12 bg-foreground rounded-xl flex items-center justify-center mx-auto">
-            <Lock className="w-5 h-5 text-background" />
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight">Admin-Zugang</h1>
-          <p className="text-sm text-muted-foreground">Bitte einloggen.</p>
-          <Link href="/login">
-            <Button className="w-full">Zur Anmeldung</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-full max-w-sm space-y-4 p-8 border border-border rounded-xl bg-card text-center">
-          <h1 className="text-xl font-semibold tracking-tight">Kein Zugriff</h1>
-          <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Admins.</p>
-          <Link href="/" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors justify-center">
-            <ArrowLeft className="w-3 h-3" /> Zurück zur Hauptseite
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const stats = statsQuery.data;
-  const errors = errorsQuery.data ?? [];
-  const errorRate = stats && stats.totalAnalyses > 0
-    ? ((stats.failed / stats.totalAnalyses) * 100).toFixed(1)
-    : "0.0";
-  const cacheRate = stats && stats.totalAnalyses > 0
-    ? ((stats.cacheHits / stats.totalAnalyses) * 100).toFixed(1)
-    : "0.0";
-
-  const chartData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return {
-      day: d.toLocaleDateString("de-AT", { weekday: "short" }),
-      Analysen: 0,
-    };
-  });
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" /> Hauptseite
-            </Link>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-sm font-medium">Admin Dashboard</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { statsQuery.refetch(); errorsQuery.refetch(); usersQuery.refetch(); }}
-              disabled={statsQuery.isFetching}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${statsQuery.isFetching ? "animate-spin" : ""}`} />
-              Aktualisieren
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => clearCacheMutation.mutate(undefined, { onSuccess: () => statsQuery.refetch() })}
-              disabled={clearCacheMutation.isPending}
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Cache leeren
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Tabs */}
-      <div className="border-b border-border">
-        <div className="container flex gap-6 h-12 items-end">
-          {[
-            { id: "metrics" as Tab, label: "Metriken" },
-            { id: "users" as Tab, label: "User-Verwaltung" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`pb-3 text-sm transition-colors border-b-2 ${
-                tab === t.id
-                  ? "border-foreground text-foreground font-medium"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <main className="container py-8 space-y-8">
-        {tab === "metrics" && (
-          <>
-            {stats ? (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: "Heute", value: stats.analysesToday },
-                    { label: "Diese Woche", value: stats.analysesThisWeek },
-                    { label: "Diesen Monat", value: stats.analysesThisMonth },
-                    { label: "Gesamt", value: stats.totalAnalyses },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="border border-border rounded-lg p-4 bg-card">
-                      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                      <p className="text-2xl font-semibold tabular-nums">{value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <p className="text-xs text-muted-foreground mb-1">Ø Latenz</p>
-                    <p className="text-2xl font-semibold tabular-nums">{(stats.avgDurationMs / 1000).toFixed(1)}s</p>
-                  </div>
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <p className="text-xs text-muted-foreground mb-1">Fehlerquote</p>
-                    <p className="text-2xl font-semibold tabular-nums">{errorRate}%</p>
-                  </div>
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <p className="text-xs text-muted-foreground mb-1">Cache-Hits</p>
-                    <p className="text-2xl font-semibold tabular-nums">{cacheRate}%</p>
-                  </div>
-                  <div className="border border-border rounded-lg p-4 bg-card">
-                    <p className="text-xs text-muted-foreground mb-1">Est. API-Kosten</p>
-                    <p className="text-2xl font-semibold tabular-nums">${stats.estimatedCostUsd.toFixed(2)}</p>
-                  </div>
-                </div>
-
-                <div className="border border-border rounded-lg p-6 bg-card">
-                  <h2 className="text-sm font-medium mb-4 text-muted-foreground">Analysen letzte 7 Tage (Schätzung)</h2>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={chartData}>
-                      <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="Analysen" fill="hsl(var(--foreground))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Lädt…</p>
-            )}
-
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight mb-4">Letzte Fehler</h2>
-              {errors.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Keine Fehler.</p>
-              ) : (
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-3 font-medium text-muted-foreground">URL</th>
-                        <th className="text-left p-3 font-medium text-muted-foreground">Zeitpunkt</th>
-                        <th className="text-left p-3 font-medium text-muted-foreground">Fehler</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {errors.map((err, i) => (
-                        <tr key={i} className="hover:bg-muted/20 transition-colors">
-                          <td className="p-3 font-mono text-xs max-w-[200px] truncate">{err.url}</td>
-                          <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{formatTimestamp(err.timestamp)}</td>
-                          <td className="p-3 text-xs text-destructive max-w-[300px] break-words">{err.error}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {tab === "users" && (
-          <UsersTab
-            users={usersQuery.data ?? []}
-            isLoading={usersQuery.isLoading}
-            onCreateClick={() => setShowInviteModal(true)}
-            onToggle={(userId) => toggleUserMutation.mutate({ userId })}
-            currentUserId={me.id}
-          />
-        )}
-      </main>
-
-      {showInviteModal && (
-        <InviteModal
-          onClose={() => { setShowInviteModal(false); usersQuery.refetch(); }}
-        />
-      )}
-
-      <footer className="border-t border-border py-4 mt-8">
-        <div className="container text-xs text-muted-foreground font-mono">
-          Auto-Refresh alle 30s · AREA Admin · {me.email}
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-// ============================================================
-// Users Tab
-// ============================================================
+type TabName = 'metrics' | 'errors' | 'users' | 'system';
 
 type UserRow = {
   id: number;
   email: string;
   name: string;
-  role: "admin" | "user";
+  role: 'admin' | 'user';
   isActive: boolean;
   hasPassword: boolean;
-  createdAt: Date;
   lastLoginAt: Date | null;
 };
 
-function UsersTab({
-  users,
-  isLoading,
-  onCreateClick,
-  onToggle,
-  currentUserId,
-}: {
-  users: UserRow[];
-  isLoading: boolean;
-  onCreateClick: () => void;
-  onToggle: (userId: number) => void;
-  currentUserId: number;
-}) {
-  return (
-    <>
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">User</h2>
-        <Button size="sm" onClick={onCreateClick}>
-          <UserPlus className="w-4 h-4 mr-1.5" />
-          Neuen Kunden einladen
-        </Button>
-      </div>
+type MetricsSnapshot = {
+  totalAnalyses: number;
+  successful: number;
+  failed: number;
+  cacheHits: number;
+  avgDurationMs: number;
+  estimatedCostUsd: number;
+  analysesToday: number;
+  analysesThisWeek: number;
+};
 
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Lädt…</p>
-      ) : users.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Noch keine User.</p>
-      ) : (
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">E-Mail</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Rolle</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Letzter Login</th>
-                <th className="text-right p-3 font-medium text-muted-foreground">Aktion</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="p-3">{u.name}</td>
-                  <td className="p-3 font-mono text-xs">{u.email}</td>
-                  <td className="p-3 text-xs">
-                    <span className={`inline-block px-2 py-0.5 rounded ${u.role === "admin" ? "bg-foreground text-background" : "bg-muted"}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="p-3 text-xs">
-                    {!u.hasPassword ? (
-                      <span className="text-muted-foreground">eingeladen</span>
-                    ) : u.isActive ? (
-                      <span className="text-green-600">aktiv</span>
-                    ) : (
-                      <span className="text-destructive">deaktiviert</span>
-                    )}
-                  </td>
-                  <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("de-AT", {
-                      day: "2-digit", month: "2-digit", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
-                    }) : "—"}
-                  </td>
-                  <td className="p-3 text-right">
-                    {u.id !== currentUserId && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onToggle(u.id)}
-                      >
-                        <Power className="w-3.5 h-3.5 mr-1.5" />
-                        {u.isActive ? "Deaktivieren" : "Aktivieren"}
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </>
+function formatTimestamp(ts: number | Date | null | undefined): string {
+  if (ts === null || ts === undefined) return '__live__';
+  const date = ts instanceof Date ? ts : new Date(ts);
+  return date.toLocaleString('de-AT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function HealthStrip() {
+  return (
+    <div className="border-b border-[var(--area-line)] bg-[rgba(255,253,250,0.68)] px-6 py-3">
+      <div className="flex flex-wrap gap-2">
+        {content.admin_dashboard.health_strip.labels.map((label) => (
+          <div key={label} className="inline-flex items-center gap-2 rounded-full border border-[var(--area-line)] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
+            <span className="status-dot status-teal opacity-70" />
+            <TodoText value={label} /> · online
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
-// ============================================================
-// Invite Modal
-// ============================================================
+function MetricCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <article className="rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-5 shadow-hair">
+      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={label} /></p>
+      <p className="mt-6 font-display text-[48px] leading-none font-tabular"><TodoText value={value} /></p>
+    </article>
+  );
+}
 
-function InviteModal({ onClose }: { onClose: () => void }) {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+function MetricsTab({ stats }: { stats: MetricsSnapshot | undefined }) {
+  if (!stats) {
+    return <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Lädt...</p>;
+  }
+
+  const errorRate = stats.totalAnalyses > 0 ? `${((stats.failed / stats.totalAnalyses) * 100).toFixed(1)}%` : '0.0%';
+  const cacheRate = stats.totalAnalyses > 0 ? `${((stats.cacheHits / stats.totalAnalyses) * 100).toFixed(1)}%` : '0.0%';
+  const metrics = [
+    { label: 'Analysen heute', value: stats.analysesToday },
+    { label: 'Analysen diese Woche', value: stats.analysesThisWeek },
+    { label: 'Analysen gesamt', value: stats.totalAnalyses },
+    { label: 'Erfolgsquote (24h)', value: `${Math.max(0, 100 - Number.parseFloat(errorRate)).toFixed(1)}%` },
+    { label: 'Cache-Hit-Rate', value: cacheRate },
+    { label: 'Ø Analyse-Dauer', value: `${(stats.avgDurationMs / 1000).toFixed(1)}s` },
+    { label: 'API-Kosten heute (€)', value: stats.estimatedCostUsd.toFixed(2) },
+    { label: 'Fehlerquote', value: errorRate },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((card) => <MetricCard key={card.label} label={card.label} value={card.value} />)}
+      </div>
+      <section className="chart-grid min-h-[320px] rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-6 shadow-hair">
+        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Funnel / Conversion</p>
+        <div className="mt-10 grid gap-5 md:grid-cols-4">
+          {[
+            ['Gestartet', stats.totalAnalyses],
+            ['Erfolgreich', stats.successful],
+            ['Fehler', stats.failed],
+            ['Cache', stats.cacheHits],
+          ].map(([label, value]) => (
+            <div key={label} className="border-l border-[var(--area-line-strong)] pl-4">
+              <p className="font-display text-[42px] leading-none font-tabular"><TodoText value={value} /></p>
+              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={label} /></p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ErrorsTable({ errors }: { errors: Array<{ url: string; timestamp: number; error: string }> }) {
+  return (
+    <div className="overflow-auto rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] shadow-hair">
+      <table className="min-w-[860px] w-full border-collapse">
+        <thead className="sticky top-0 bg-[var(--area-surface)]">
+          <tr>
+            {['Zeit', 'URL', 'Fehler-Typ', 'Detail'].map((column) => (
+              <th key={column} className="border-b border-[var(--area-line)] px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={column} /></th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {errors.length > 0 ? errors.map((err) => (
+            <tr key={`${err.timestamp}-${err.url}`}>
+              <td className="border-b border-[var(--area-line)] px-4 py-4 font-mono text-[12px] text-[var(--area-muted)]"><TodoText value={formatTimestamp(err.timestamp)} /></td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4 font-mono text-[12px]"><TodoText value={err.url} /></td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4 text-[14px]">Analyse</td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4 text-[14px] text-[var(--area-red)]"><TodoText value={err.error} /></td>
+            </tr>
+          )) : (
+            <tr><td colSpan={4} className="px-4 py-12 text-center text-[14px] text-[var(--area-muted)]">Keine Fehler.</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function UsersTable({ users, currentUserId, onToggle }: { users: UserRow[]; currentUserId: number; onToggle: (userId: number) => void }) {
+  return (
+    <div className="overflow-auto rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] shadow-hair">
+      <table className="min-w-[980px] w-full border-collapse">
+        <thead className="sticky top-0 bg-[var(--area-surface)]">
+          <tr>
+            {content.admin_dashboard.users_table_columns.map((column) => (
+              <th key={column} className="border-b border-[var(--area-line)] px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={column} /></th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.id}>
+              <td className="border-b border-[var(--area-line)] px-4 py-4 font-mono text-[12px]"><TodoText value={user.email} /></td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4"><TodoText value={user.name} /></td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4"><TodoText value={user.role} /></td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4"><TodoText value={!user.hasPassword ? 'eingeladen' : user.isActive ? 'aktiv' : 'deaktiviert'} /></td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4 font-mono text-[12px] text-[var(--area-muted)]"><TodoText value={formatTimestamp(user.lastLoginAt)} /></td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4 font-tabular">__live__</td>
+              <td className="border-b border-[var(--area-line)] px-4 py-4">
+                {user.id !== currentUserId ? (
+                  <Button type="button" tone="ghost" className="border-[var(--area-line-strong)] text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]" onClick={() => onToggle(user.id)}>
+                    <Power size={14} strokeWidth={1.5} />
+                    {user.isActive ? 'Deaktivieren' : 'Aktivieren'}
+                  </Button>
+                ) : null}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SystemTab({ onClearCache, clearing }: { onClearCache: () => void; clearing: boolean }) {
+  return (
+    <div className="grid max-w-[720px] gap-3">
+      <Button type="button" tone="ghost" disabled={clearing} className="justify-between border-[var(--area-line-strong)] px-4 text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]" onClick={onClearCache}>
+        <span className="inline-flex items-center gap-2"><Trash2 size={14} strokeWidth={1.5} />Cache leeren</span>
+      </Button>
+      {content.admin_dashboard.system_actions.filter((action) => action.danger).map((action) => (
+        <Button key={action.label} type="button" tone="danger" className={cn('justify-between px-4', action.danger && 'border-[var(--area-red)]')}>
+          <TodoText value={action.label} />
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -400,77 +206,139 @@ function InviteModal({ onClose }: { onClose: () => void }) {
     onError: (err) => setError(err.message),
   });
 
-  const handleSubmit = () => {
-    setError(null);
-    createInvite.mutate({ email: email.trim(), name: name.trim() });
-  };
+  return (
+    <Modal open={open} onClose={onClose} labelledBy="invite-admin-title">
+      <h2 id="invite-admin-title" className="font-display text-[42px] leading-tight"><TodoText value="__TODO_ADMIN_INVITE_HEADLINE__" /></h2>
+      {!inviteLink ? (
+        <form
+          className="mt-8 space-y-7"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setError(null);
+            createInvite.mutate({ email: email.trim(), name: name.trim() });
+          }}
+        >
+          <FloatingInput label="Name" type="text" name="name" value={name} onChange={(event) => setName(event.target.value)} disabled={createInvite.isPending} required />
+          <FloatingInput label={content.login_page.fields[0].label} type="email" name="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={createInvite.isPending} required />
+          {error ? <p className="text-[13px] text-[var(--area-red)]">{error}</p> : null}
+          <Button fullWidth type="submit" disabled={createInvite.isPending || !email.trim() || !name.trim()}>
+            <UserPlus size={14} strokeWidth={1.5} />
+            Invite erstellen
+          </Button>
+        </form>
+      ) : (
+        <div className="mt-8 space-y-5">
+          <p className="text-[14px] leading-6 text-[var(--area-muted)]">Invite erstellt. Der Link ist 7 Tage gültig.</p>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <input readOnly value={inviteLink} className="min-w-0 rounded-[6px] border border-[var(--area-line)] bg-transparent px-3 py-2 font-mono text-[12px]" />
+            <Button
+              type="button"
+              tone="ghost"
+              className="border-[var(--area-line-strong)] text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]"
+              onClick={async () => {
+                await navigator.clipboard.writeText(inviteLink);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1800);
+              }}
+            >
+              {copied ? <Check size={15} strokeWidth={1.5} /> : <Copy size={15} strokeWidth={1.5} />}
+            </Button>
+          </div>
+          <Button type="button" fullWidth onClick={onClose}>Schliessen</Button>
+        </div>
+      )}
+    </Modal>
+  );
+}
 
-  const handleCopy = async () => {
-    if (!inviteLink) return;
-    await navigator.clipboard.writeText(inviteLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+export function AdminDashboard() {
+  const [active, setActive] = useState<TabName>('metrics');
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+  const utils = trpc.useUtils();
+  const meQuery = trpc.auth.me.useQuery();
+  const me = meQuery.data;
+  const isAdmin = me?.role === 'admin';
+
+  const statsQuery = trpc.admin.stats.useQuery(undefined, { enabled: isAdmin });
+  const errorsQuery = trpc.admin.errors.useQuery({ limit: 20 }, { enabled: isAdmin });
+  const usersQuery = trpc.admin.listUsers.useQuery(undefined, { enabled: isAdmin });
+  const clearCacheMutation = trpc.admin.clearCache.useMutation({ onSuccess: () => statsQuery.refetch() });
+  const toggleUserMutation = trpc.admin.toggleUser.useMutation({ onSuccess: () => usersQuery.refetch() });
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+      window.location.href = '/login';
+    },
+  });
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const id = window.setInterval(() => setTick((value) => value + 1), REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin || tick === 0) return;
+    statsQuery.refetch();
+    errorsQuery.refetch();
+    if (active === 'users') usersQuery.refetch();
+  }, [tick, isAdmin, active]);
+
+  if (meQuery.isLoading) {
+    return <main className="grid min-h-screen place-items-center font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Lädt...</main>;
+  }
+
+  if (!me || !isAdmin) {
+    return (
+      <main className="grid min-h-screen place-items-center px-6">
+        <section className="w-full max-w-[420px] rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-8 text-center shadow-hair">
+          <Lock className="mx-auto text-[var(--area-muted)]" size={24} strokeWidth={1.5} />
+          <h1 className="mt-5 font-display text-[36px] leading-tight">Admin-Zugang</h1>
+          <p className="mt-3 text-[14px] leading-6 text-[var(--area-muted)]">Dieser Bereich ist nur für Admins.</p>
+        </section>
+      </main>
+    );
+  }
+
+  const activeTab = content.admin_dashboard.tabs.find((tab) => tab.name === active) ?? content.admin_dashboard.tabs[0];
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold tracking-tight">Neuen Kunden einladen</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
+    <>
+      <AppNav admin />
+      <HealthStrip />
+      <main className="px-6 py-8">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={content.admin_dashboard.header_label} /></p>
+            <h1 className="mt-3 font-display text-[52px] leading-none tracking-[-0.05em]"><TodoText value={activeTab.label} /></h1>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button type="button" tone="ghost" className="border-[var(--area-line-strong)] text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]" onClick={() => { statsQuery.refetch(); errorsQuery.refetch(); usersQuery.refetch(); }}>
+              <RefreshCw size={14} strokeWidth={1.5} />
+              Aktualisieren
+            </Button>
+            {active === 'users' ? <Button type="button" onClick={() => setInviteOpen(true)}><TodoText value="__TODO_INVITE_USER_LABEL__" /></Button> : null}
+            <Button type="button" tone="ghost" className="border-[var(--area-line-strong)] text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]" onClick={() => logoutMutation.mutate()} disabled={logoutMutation.isPending}>
+              <TodoText value={content.admin_dashboard.logout_label} />
+            </Button>
+          </div>
         </div>
 
-        {!inviteLink ? (
-          <>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Name</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Max Mustermann"
-                  disabled={createInvite.isPending}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">E-Mail</label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="kunde@beispiel.at"
-                  disabled={createInvite.isPending}
-                />
-              </div>
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>Abbrechen</Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={createInvite.isPending || !email.trim() || !name.trim()}
-              >
-                Invite erstellen
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Invite erstellt. Schicke diesen Link an den Kunden — er ist 7 Tage gültig.
-            </p>
-            <div className="flex gap-2">
-              <Input value={inviteLink} readOnly className="font-mono text-xs" />
-              <Button variant="outline" onClick={handleCopy}>
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </Button>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={onClose}>Schließen</Button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+        <nav className="mb-8 flex gap-8 overflow-auto border-b border-[var(--area-line)] font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
+          {content.admin_dashboard.tabs.map((tab) => (
+            <button key={tab.name} type="button" onClick={() => setActive(tab.name as TabName)} className={cn('relative whitespace-nowrap pb-4 transition-colors hover:text-[var(--area-ink)]', active === tab.name && 'text-[var(--area-ink)] after:absolute after:bottom-[-1px] after:left-0 after:h-px after:w-full after:bg-[var(--area-ink)]')}>
+              <TodoText value={tab.label} />
+            </button>
+          ))}
+        </nav>
+
+        {active === 'metrics' ? <MetricsTab stats={statsQuery.data as MetricsSnapshot | undefined} /> : null}
+        {active === 'errors' ? <ErrorsTable errors={errorsQuery.data ?? []} /> : null}
+        {active === 'users' ? <UsersTable users={usersQuery.data ?? []} currentUserId={me.id} onToggle={(userId) => toggleUserMutation.mutate({ userId })} /> : null}
+        {active === 'system' ? <SystemTab clearing={clearCacheMutation.isPending} onClearCache={() => clearCacheMutation.mutate()} /> : null}
+      </main>
+      <InviteModal open={inviteOpen} onClose={() => { setInviteOpen(false); usersQuery.refetch(); }} />
+    </>
   );
 }

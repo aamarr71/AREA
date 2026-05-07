@@ -1,0 +1,502 @@
+{
+  "$schema_note": "Diese JSON enthält ALLE austauschbaren Inhalte für die AREA-Landingpage. Die drei Prompt-Dateien (prompt_editor.md, prompt_magazine.md, prompt_instrument.md) verweisen auf diese JSON. Felder mit __TODO__ sind Platzhalter — fülle sie aus, BEVOR du den Prompt an Claude Design schickst, ODER lass sie drin und Claude Design füllt mit plausiblen Defaults. Sprache: ALLES auf Deutsch (österreichisches Deutsch wo relevant).",
+  "$version": "1.0",
+  "$last_edited": "2026-05-06",
+
+  "brand": {
+    "name": "AREA",
+    "tagline_short": "Automated Real Estate Analyst",
+    "logo_wordmark": "AREA",
+    "logo_icon_letter": "A",
+    "primary_color_dark": "#0F1419",
+    "primary_color_light": "#F5F1EB",
+    "neutral_text": "#1A1F25",
+    "neutral_muted": "#6B7280",
+    "status_red": "#E63946",
+    "status_amber": "#F4A261",
+    "status_teal": "#2A9D8F",
+    "color_usage_rule": "Status-Farben (Rot/Amber/Teal) sind AUSSCHLIEßLICH für Ampelsystem im Demo-Bereich und FAQ-Status-Indikatoren reserviert. NIEMALS für CTAs, Buttons, oder Brand-Elemente verwenden. Brand-Primär ist Anthrazit/Off-White."
+  },
+
+  "hero": {
+    "eyebrow": "Für Wiener Immobilienmakler",
+    "headline": "Die meisten Exposés haben 3-5 Pflichtfehler. Auch deine.",
+    "subline": "AREA zeigt sie dir — in 30 Sekunden, bevor's der Käufer sieht.",
+    "cta_primary_label": "Demo vereinbaren",
+    "cta_secondary_label": "Wie es funktioniert",
+    "cta_secondary_anchor": "#live-demo"
+  },
+
+  "live_demo": {
+    "section_eyebrow": "So arbeitet AREA",
+    "section_headline": "Drei Stufen. Eine Wahrheit über dein Exposé.",
+    "section_intro": "Gib eine URL ein — willhaben, ImmoScout, deine eigene Maklerseite. AREA zieht alle Daten, prüft auf Widersprüche und Pflichtangaben, und liefert dir eine Verkaufsstrategie. Hier ist ein echtes Beispiel.",
+
+    "demo_object": {
+      "title_in_listing": "Charmante 3-Zimmer-Altbauwohnung im Herzen von Mariahilf",
+      "address": "Mariahilfer Straße 87, 1060 Wien",
+      "price_label": "Kaufpreis",
+      "price_value": "€ 489.000",
+      "size_label": "Wohnfläche",
+      "size_value": "78 m²",
+      "rooms_label": "Zimmer",
+      "rooms_value": "3",
+      "year_label": "Baujahr",
+      "year_value": "1908",
+      "energy_label": "Energieausweis",
+      "energy_value": "fehlt",
+      "operating_costs_label": "Betriebskosten",
+      "operating_costs_value": "nicht angegeben",
+      "commission_label": "Provision",
+      "commission_value": "nicht ausgewiesen",
+      "neubau_flag_in_listing": "Als 'Neubau-Charakter' beworben"
+    },
+
+    "stage_1": {
+      "name": "Stufe 1 — Datenextraktion",
+      "duration_seconds": 8,
+      "description": "AREA liest das Exposé und extrahiert alle relevanten Datenpunkte. Was im Text steht, was in den Metadaten steht, was im Bildertext steht — alles wird strukturiert erfasst.",
+      "fields_extracted": [
+        "Adresse + PLZ",
+        "Kaufpreis + €/m²",
+        "Wohnfläche + Nutzfläche",
+        "Zimmer + Aufteilung",
+        "Baujahr + letzte Sanierung",
+        "Energieausweis-Status",
+        "Betriebskosten",
+        "Provisions-Angabe",
+        "Ausstattung",
+        "Lagebeschreibung"
+      ],
+      "visual_hint": "Während Stufe 1 läuft, leuchten Felder im Exposé kurz auf, dann erscheinen sie strukturiert in einer Daten-Tabelle daneben. Tabular figures, gleiche Spaltenbreite, scharf aligned."
+    },
+
+    "stage_2": {
+      "name": "Stufe 2 — Qualitätsprüfung",
+      "duration_seconds": 12,
+      "description": "AREA gleicht die extrahierten Daten gegen 10 Pflichtprüfungen ab. Widersprüche im Text werden gefunden, fehlende Angaben markiert, Textqualität bewertet.",
+      "issues_found_count": 4,
+      "issues_label": "Pflichtfehler",
+      "issues_list": [
+        {
+          "severity": "rot",
+          "title": "Energieausweis fehlt",
+          "detail": "EAVG §3 verpflichtet zur Angabe des HWB- und fGEE-Werts in jedem Inserat. Strafrahmen: bis € 1.450 je Verstoß.",
+          "law_reference": "EAVG §3, §11"
+        },
+        {
+          "severity": "rot",
+          "title": "Provision nicht ausgewiesen",
+          "detail": "MaklerG verpflichtet zur Angabe der Höhe und wer sie zahlt. Bei Unterlassung droht Provisionsverlust.",
+          "law_reference": "MaklerG §30b"
+        },
+        {
+          "severity": "amber",
+          "title": "Widerspruch: Baujahr 1908 vs. 'Neubau-Charakter'",
+          "detail": "Die Bezeichnung 'Neubau' ist rechtlich problematisch bei Bestand vor 1945 — kann als irreführende Werbung gelten.",
+          "law_reference": "UWG §2"
+        },
+        {
+          "severity": "amber",
+          "title": "Betriebskosten nicht angegeben",
+          "detail": "Käufer kalkulieren mit Vollkosten. Fehlende BK-Angabe verlängert die Verkaufsdauer um durchschnittlich 18 Tage.",
+          "law_reference": null
+        }
+      ],
+      "text_quality_score": 62,
+      "text_quality_label": "Textqualität",
+      "text_quality_max": 100,
+      "visual_hint": "Während Stufe 2 läuft: Lücken im Exposé werden rot/amber unterstrichen. Counter zählt von 0 auf 4 hoch. Score-Balken füllt sich auf 62/100."
+    },
+
+    "stage_3": {
+      "name": "Stufe 3 — Verkaufsstrategie",
+      "duration_seconds": 10,
+      "description": "AREA analysiert Zielgruppe und Marktposition, erstellt Verkaufsargumente, schätzt Verkaufsdauer und liefert ein optimiertes Kurz-Exposé.",
+      "target_groups": [
+        "Junge Akademiker-Paare (28-38) mit Doppelverdienst",
+        "Wiener Singles im Aufstieg, Erstkäufer",
+        "Investoren mit Fokus auf Mariahilf-Mikrolage"
+      ],
+      "selling_points_label": "Top-3-Verkaufsargumente",
+      "selling_points": [
+        "Mariahilfer Straße: höchste Gehfrequenz Wiens, Fußläufige Erreichbarkeit aller Wiener U-Bahn-Linien außer U6",
+        "Altbau-Charakter mit 3,2m Raumhöhe — emotionaler Trigger für Käufer mit Architektur-Affinität",
+        "1060 Wien: Bezirks-Quadratmeterpreis liegt 8% über dem Verkaufspreis — Investitionspotenzial argumentierbar"
+      ],
+      "market_comparison_label": "Marktpreisvergleich 1060 Wien",
+      "market_comparison_value": "Ø € 6.780/m² · Dieses Objekt: € 6.270/m²",
+      "market_comparison_status": "teal",
+      "estimated_sale_duration_label": "Geschätzte Verkaufsdauer",
+      "estimated_sale_duration_value": "47 Tage",
+      "visual_hint": "Während Stufe 3 läuft: Empfehlungen schreiben sich tippend (typewriter effect), Bezirks-Vergleich erscheint als Mini-Balkendiagramm, Verkaufsdauer-Pille pulsiert kurz."
+    },
+
+    "before_after_toggle": {
+      "before_label": "Original-Exposé",
+      "after_label": "AREA-optimiert",
+      "instruction": "Toggle zwischen Original und der AREA-optimierten Version — der User sieht direkt was sich ändert."
+    }
+  },
+
+  "trust_strip": {
+    "section_eyebrow": "Warum AREA",
+    "stats": [
+      {
+        "value": "10",
+        "label": "Pflichtprüfungen pro Exposé",
+        "detail": "Energieausweis, Provision, Widmung, Marktpreis-Plausibilität, Widersprüche im Text, und mehr."
+      },
+      {
+        "value": "23",
+        "label": "Wiener Bezirks-Referenzpreise",
+        "detail": "Kontinuierlich aktualisierte Preisbenchmarks von 1010 bis 1230, granular nach Bezirksteil."
+      },
+      {
+        "value": "30s",
+        "label": "Bis zur kompletten Analyse",
+        "detail": "Von URL-Eingabe bis fertiger Report. Inklusive Zielgruppen-Analyse und Verkaufsstrategie."
+      }
+    ],
+    "tech_credentials": [
+      "GPT-4.1 als Analyse-Engine",
+      "DSGVO-konform · Daten in der EU",
+      "Personenbezogene Daten werden vor jeder externen Verarbeitung anonymisiert"
+    ],
+    "market_position_statement": "Die einzige KI-gestützte Exposé-Prüfung speziell für den österreichischen Immobilienmarkt — mit echtem Wissen über EAVG, MaklerG, Wiener Bauordnung und Marktdaten pro Bezirk."
+  },
+
+  "problem": {
+    "section_eyebrow": "Das Problem",
+    "section_headline": "Exposés verlieren Vertrauen, lange bevor jemand anruft.",
+    "section_intro": "Fehlende Pflichtangaben, widersprüchliche Eckdaten und generische Texte kosten Tempo. AREA macht diese Brüche sichtbar, bevor sie im Verkaufsgespräch teuer werden.",
+    "points": [
+      "Pflichtangaben sind über Text, Portaldaten und Anhänge verstreut.",
+      "Käuferinnen und Käufer lesen Widersprüche als Unsicherheit.",
+      "Maklerteams verlieren Zeit mit manuellen Checks statt mit Beratung."
+    ]
+  },
+
+  "workflow": {
+    "section_eyebrow": "Workflow",
+    "section_headline": "Von der URL zum Prüfbericht.",
+    "section_intro": "AREA strukturiert den Prozess wie ein internes Research-Desk: Daten erfassen, Risiken prüfen, Verkaufsargumente ausarbeiten.",
+    "steps": [
+      { "label": "01", "title": "Inserat einreichen", "detail": "URL einfügen und Analyse starten." },
+      { "label": "02", "title": "Pflichtchecks lesen", "detail": "Risiken, Lücken und Widersprüche priorisiert prüfen." },
+      { "label": "03", "title": "Report nutzen", "detail": "Befunde, Marktindikatoren und Strategie im Team weiterverwenden." }
+    ]
+  },
+
+  "pricing": {
+    "section_eyebrow": "Pricing",
+    "section_headline": "Preise, die mit dir wachsen.",
+    "section_intro": "Drei Tiers für jeden Punkt deiner Karriere. Alle Pläne mit voller Funktionalität — nur das Volumen unterscheidet sich.",
+    "billing_note": "Alle Preise zzgl. 20% USt. Monatlich kündbar.",
+    "tiers": [
+      {
+        "name": "Starter",
+        "price_value": "49",
+        "price_currency": "€",
+        "price_period": "/Monat",
+        "tagline": "Für Einzel-Makler die anfangen",
+        "analyses_per_month": "20 Analysen / Monat",
+        "features": [
+          "Alle 3 Analyse-Stufen",
+          "Alle 10 Pflichtprüfungen",
+          "Wiener Bezirksdaten",
+          "Report-Export als PDF",
+          "Email-Support"
+        ],
+        "cta_label": "Demo vereinbaren",
+        "highlighted": false
+      },
+      {
+        "name": "Professional",
+        "price_value": "149",
+        "price_currency": "€",
+        "price_period": "/Monat",
+        "tagline": "Für aktive Makler mit Volumen",
+        "analyses_per_month": "100 Analysen / Monat",
+        "features": [
+          "Alles aus Starter",
+          "Verkaufsstrategie-Modul",
+          "Prioritäts-Analyse (schneller)",
+          "Übersetzung Deutsch → Englisch",
+          "Telefon-Support während Bürozeiten"
+        ],
+        "cta_label": "Demo vereinbaren",
+        "highlighted": true,
+        "badge_label": "Beliebteste Wahl"
+      },
+      {
+        "name": "Agentur",
+        "price_value": "399",
+        "price_currency": "€",
+        "price_period": "/Monat",
+        "tagline": "Für Maklerbüros mit mehreren Köpfen",
+        "analyses_per_month": "Unbegrenzt",
+        "features": [
+          "Alles aus Professional",
+          "Bis zu 10 Team-Mitglieder",
+          "Analyse-Historie pro Mitglied",
+          "Custom-Branding im Report",
+          "Persönlicher Account-Manager"
+        ],
+        "cta_label": "Demo vereinbaren",
+        "highlighted": false
+      }
+    ]
+  },
+
+  "faq": {
+    "section_eyebrow": "Häufige Fragen",
+    "section_headline": "Was Makler wissen wollen.",
+    "items": [
+      {
+        "question": "Was passiert mit den Daten meiner Inserate und Kunden?",
+        "answer": "Daten werden in der EU verarbeitet und gespeichert. Personenbezogene Daten (Namen, Adressen, Telefonnummern) werden vor jeder externen KI-Verarbeitung anonymisiert. Alles DSGVO-konform — Verarbeitungsverzeichnis und Auftragsverarbeitungsvertrag liegen vor."
+      },
+      {
+        "question": "Mit welchen Portalen funktioniert AREA?",
+        "answer": "willhaben.at, ImmoScout24.at, immobilien.net, sowie eigene Maklerseiten. AREA liest die URL und extrahiert die Daten direkt — keine Integration nötig, keine API-Keys. Wenn ein Portal nicht funktioniert, sagst du Bescheid und wir fügen es hinzu."
+      },
+      {
+        "question": "Wie genau ist die KI? Kann ich mich darauf verlassen?",
+        "answer": "AREA ersetzt nicht deine fachliche Einschätzung — sie zeigt dir Lücken auf, die das menschliche Auge übersieht. Die 10 Pflichtprüfungen sind regelbasiert (kein KI-Halluzinieren möglich). Verkaufsempfehlungen sind GPT-4.1-generiert und als Vorschläge zu lesen — du entscheidest."
+      },
+      {
+        "question": "Kann ich monatlich kündigen?",
+        "answer": "Ja. Keine Mindestlaufzeit, keine versteckten Kosten. Wenn AREA dir keinen Mehrwert bringt, kündigst du im Dashboard mit einem Klick zum Monatsende."
+      },
+      {
+        "question": "Was unterscheidet AREA von allgemeinen KI-Tools wie ChatGPT?",
+        "answer": "ChatGPT kennt keine österreichischen Pflichtangaben (EAVG, MaklerG), keine Wiener Bezirks-Referenzpreise und keine lokalen Markt-Eigenheiten. AREA wurde speziell für den österreichischen Immobilienmarkt gebaut — mit echtem Wissen über Pflichten, Strafrahmen und Marktdaten."
+      },
+      {
+        "question": "Brauche ich technisches Vorwissen?",
+        "answer": "Nein. Du brauchst nur eine URL eines Exposés — den Rest macht AREA. Die Bedienung ist auf Maklerinnen und Makler zugeschnitten, nicht auf IT-Experten."
+      }
+    ]
+  },
+
+  "final_cta": {
+    "headline": "Bereit, deine Lücken zu finden?",
+    "subline": "Vereinbare ein 20-Minuten-Demo. Wir analysieren live ein Exposé deiner Wahl — du entscheidest danach.",
+    "cta_primary_label": "Demo vereinbaren",
+    "cta_secondary_label": "Pricing ansehen",
+    "cta_secondary_anchor": "#pricing"
+  },
+
+  "contact_form": {
+    "headline": "Demo vereinbaren",
+    "intro": "Hinterlasse deine Daten — wir melden uns innerhalb von 24 Stunden mit Terminvorschlägen.",
+    "fields": [
+      { "name": "name", "label": "Vor- und Nachname", "type": "text", "required": true },
+      { "name": "company", "label": "Maklerbüro / Firma", "type": "text", "required": false },
+      { "name": "email", "label": "E-Mail-Adresse", "type": "email", "required": true },
+      { "name": "phone", "label": "Telefonnummer (optional)", "type": "tel", "required": false },
+      { "name": "message", "label": "Nachricht (optional)", "type": "textarea", "required": false, "placeholder": "Erzähl uns kurz, was du suchst — oder lass es leer." }
+    ],
+    "consent_label": "Ich habe die Datenschutzerklärung gelesen und stimme der Verarbeitung meiner Daten zur Kontaktaufnahme zu.",
+    "consent_pre_checked": false,
+    "submit_label": "Anfrage senden",
+    "submit_loading_label": "Wird gesendet…",
+    "success_message": "Danke. Wir melden uns innerhalb von 24 Stunden.",
+    "spam_protection_note": "Honeypot + Cloudflare Turnstile aktivieren — clientseitig vorbereiten, server-seitiger Hook __TODO__."
+  },
+
+  "footer": {
+    "tagline": "Automated Real Estate Analyst — gebaut in Wien für den österreichischen Markt.",
+    "columns": [
+      {
+        "header": "Produkt",
+        "links": [
+          { "label": "Wie es funktioniert", "href": "#live-demo" },
+          { "label": "Preise", "href": "#pricing" },
+          { "label": "Demo vereinbaren", "href": "#contact" }
+        ]
+      },
+      {
+        "header": "Rechtliches",
+        "links": [
+          { "label": "Impressum", "href": "/impressum" },
+          { "label": "Datenschutzerklärung", "href": "/datenschutz" },
+          { "label": "AGB", "href": "/agb" },
+          { "label": "Cookie-Einstellungen", "href": "#", "action": "openCookieBanner" }
+        ]
+      },
+      {
+        "header": "Kontakt",
+        "links": [
+          { "label": "__TODO_EMAIL__", "href": "mailto:__TODO_EMAIL__" },
+          { "label": "Demo vereinbaren", "href": "#contact" }
+        ]
+      }
+    ],
+    "copyright": "© 2026 AREA — __TODO_FIRMENINHABER__. Alle Rechte vorbehalten."
+  },
+
+  "cookie_banner": {
+    "headline": "Wir verwenden Cookies und ähnliche Technologien.",
+    "intro": "Notwendige Cookies sorgen dafür, dass AREA überhaupt funktioniert. Mit deiner Zustimmung verwenden wir zusätzlich Analyse-Tools (Plausible) um die Seite zu verbessern. Deine Wahl kannst du jederzeit ändern.",
+    "buttons": [
+      { "label": "Akzeptieren", "action": "acceptAll", "weight": "equal" },
+      { "label": "Ablehnen", "action": "rejectAll", "weight": "equal" },
+      { "label": "Einstellungen", "action": "openSettings", "weight": "equal" }
+    ],
+    "settings_categories": [
+      {
+        "name": "Notwendig",
+        "always_active": true,
+        "description": "Session-Cookies für Login und Sicherheit. Können nicht deaktiviert werden."
+      },
+      {
+        "name": "Analyse",
+        "always_active": false,
+        "default": false,
+        "description": "Anonyme Nutzungsstatistik (Plausible Analytics, cookieless)."
+      }
+    ],
+    "legal_link_label": "Mehr in der Datenschutzerklärung",
+    "legal_link_href": "/datenschutz"
+  },
+
+  "login_page": {
+    "headline": "Willkommen zurück.",
+    "subline": "Melde dich mit deinem AREA-Konto an.",
+    "fields": [
+      { "name": "email", "label": "E-Mail", "type": "email" },
+      { "name": "password", "label": "Passwort", "type": "password" }
+    ],
+    "submit_label": "Anmelden",
+    "forgot_password_label": "Passwort vergessen?",
+    "no_account_hint": "Noch kein Konto? AREA wird aktuell nur über persönliche Einladung freigeschaltet.",
+    "no_account_cta_label": "Demo vereinbaren",
+    "no_account_cta_href": "/#contact"
+  },
+
+  "invite_page": {
+    "headline": "Willkommen bei AREA.",
+    "subline": "Du wurdest von __TODO_INVITER__ eingeladen. Setze ein Passwort und du bist drin.",
+    "fields": [
+      { "name": "password", "label": "Passwort wählen", "type": "password", "min_length": 10 },
+      { "name": "password_confirm", "label": "Passwort wiederholen", "type": "password" }
+    ],
+    "submit_label": "Konto aktivieren"
+  },
+
+  "dashboard": {
+    "page_title": "Deine Analysen",
+    "new_analysis_button_label": "Neue Analyse",
+    "search_placeholder": "Nach Adresse oder Bezirk suchen…",
+    "empty_state": {
+      "headline": "Noch keine Analyse hier.",
+      "subline": "Füge dein erstes Exposé hinzu — gib einfach die URL ein, AREA macht den Rest.",
+      "cta_label": "Erste Analyse starten"
+    },
+    "list_columns": [
+      { "field": "status_dot", "label": "" },
+      { "field": "address", "label": "Objekt" },
+      { "field": "object_summary", "label": "Eckdaten" },
+      { "field": "issues_count", "label": "Lücken" },
+      { "field": "date", "label": "Datum" }
+    ],
+    "list_example_rows": [
+      {
+        "status": "rot",
+        "address": "Mariahilfer Straße 87, 1060",
+        "summary": "78 m² · 3 Zi · € 489k",
+        "issues_count": 4,
+        "date": "Heute 14:32",
+        "url": "https://willhaben.at/iad/__TODO__"
+      },
+      {
+        "status": "amber",
+        "address": "Wallensteinplatz 8, 1200",
+        "summary": "52 m² · 2 Zi · € 289k",
+        "issues_count": 2,
+        "date": "Gestern",
+        "url": "https://willhaben.at/iad/__TODO__"
+      },
+      {
+        "status": "teal",
+        "address": "Lerchenfelder Gürtel 17, 1080",
+        "summary": "95 m² · 4 Zi · € 630k",
+        "issues_count": 0,
+        "date": "3. Mai 2026",
+        "url": "https://willhaben.at/iad/__TODO__"
+      }
+    ],
+    "new_analysis_modal": {
+      "headline": "Neue Analyse",
+      "url_input_label": "Exposé-URL",
+      "url_input_placeholder": "https://www.willhaben.at/iad/...",
+      "url_input_hint": "Funktioniert mit willhaben, ImmoScout, immobilien.net und eigenen Maklerseiten.",
+      "submit_label": "Analyse starten",
+      "submit_loading_label": "Analyse läuft…",
+      "progress_phases": [
+        "Exposé wird geladen…",
+        "Inhalte werden analysiert…",
+        "Report wird erstellt…"
+      ]
+    }
+  },
+
+  "report_view": {
+    "back_to_list_label": "← Zurück zu allen Analysen",
+    "header_url_label": "Originalanzeige",
+    "header_url_target": "_blank",
+    "header_translate_toggle": ["DE", "EN"],
+    "header_export_label": "Als PDF exportieren",
+    "section_titles": {
+      "extraction": "Stufe 1 — Datenextraktion",
+      "quality": "Stufe 2 — Qualitätsprüfung",
+      "strategy": "Stufe 3 — Verkaufsstrategie"
+    }
+  },
+
+  "admin_dashboard": {
+    "header_label": "ADMIN · AREA",
+    "logout_label": "Abmelden",
+    "tabs": [
+      { "name": "metrics", "label": "Metriken" },
+      { "name": "errors", "label": "Fehler" },
+      { "name": "users", "label": "User-Verwaltung" },
+      { "name": "system", "label": "System" }
+    ],
+    "health_strip": {
+      "labels": ["Server", "Datenbank", "n8n", "DeepSeek API"],
+      "status_options": ["online", "degraded", "offline"]
+    },
+    "metric_cards": [
+      { "label": "Analysen heute", "value": "__live__" },
+      { "label": "Erfolgsquote (24h)", "value": "__live__" },
+      { "label": "Cache-Hit-Rate", "value": "__live__" },
+      { "label": "Ø Analyse-Dauer", "value": "__live__" },
+      { "label": "API-Kosten heute (€)", "value": "__live__" },
+      { "label": "Aktive User", "value": "__live__" }
+    ],
+    "errors_table_columns": ["Zeit", "User", "URL", "Phase", "Fehler-Typ", "Detail"],
+    "users_table_columns": ["E-Mail", "Name", "Rolle", "Status", "Letzter Login", "Analysen total", "Aktionen"],
+    "system_actions": [
+      { "label": "Cache leeren", "danger": false },
+      { "label": "Maintenance-Modus aktivieren", "danger": true }
+    ]
+  },
+
+  "todos_for_amar": {
+    "must_fill_before_launch": [
+      "footer.columns[2].links[0].label / href → echte E-Mail-Adresse",
+      "footer.copyright → Firmen-Inhaber-Name (laut Gewerbeschein)",
+      "invite_page.subline → falls dynamisch, sonst Default 'einem AREA-Admin'",
+      "dashboard.list_example_rows[*].url → echte URLs falls für Demo-Zwecke verwendet",
+      "contact_form.spam_protection_note → Cloudflare Turnstile Site-Key + Server-Hook implementieren"
+    ],
+    "optional_overrides": [
+      "pricing.tiers[*].price_value → finale Preise nach Markt-Validierung",
+      "trust_strip.stats[*].value → echte Zahlen sobald Daten vorliegen",
+      "live_demo.demo_object → ggf. echtes Objekt mit Erlaubnis statt fiktiv"
+    ]
+  }
+}
