@@ -1,35 +1,13 @@
-import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { content } from "../lib/content";
-import { TodoText, userFacingError } from "../lib/utils";
-import { Button } from "../components/Button";
-import { FloatingInput } from "../components/FormField";
 import { trpc } from "../lib/trpc";
-
-type AuthMode = "login" | "invite";
-
-function AuthCard({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <main className="relative grid min-h-screen place-items-center bg-[var(--area-paper)] px-6 py-12" aria-label={"AREA " + label}>
-      <Link href="/" className="absolute left-6 top-6 font-display text-[48px] font-semibold leading-none tracking-[-0.06em] text-[var(--area-ink)] md:left-10 md:top-10 md:text-[64px]">
-        <TodoText value={content.brand.logo_wordmark} />
-      </Link>
-      <div className="w-full max-w-[420px]">
-        <section className="rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-8 shadow-hair" aria-labelledby="auth-title">
-          {children}
-        </section>
-      </div>
-    </main>
-  );
-}
+import { userFacingError } from "../lib/utils";
 
 export function LoginPage() {
   const [, navigate] = useLocation();
   const utils = trpc.useUtils();
-  const fields = content.login_page.fields;
   const [email, setEmail] = useState("");
-  const [accessCode, setAccessCode] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const login = trpc.auth.login.useMutation({
@@ -37,29 +15,38 @@ export function LoginPage() {
       await utils.auth.me.invalidate();
       navigate("/dashboard");
     },
-    onError: (err) => setError(userFacingError(err.message, "Login gerade nicht moeglich. Bitte pruefe Zugang und Systemstatus.")),
+    onError: (err) => setError(userFacingError(err.message, "Login konnte gerade nicht abgeschlossen werden.")),
   });
 
   return (
-    <AuthCard label="Login">
-      <h1 id="auth-title" className="sr-only">Login</h1>
-      <form
-        className="space-y-7"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setError(null);
-          if (!email.trim() || !accessCode) return;
-          login.mutate(Object.assign({ email: email.trim() }, { ["pass" + "word"]: accessCode }) as Parameters<typeof login.mutate>[0]);
-        }}
-      >
-        <FloatingInput label={fields[0].label} name={fields[0].name} type={fields[0].type} value={email} onChange={(event) => setEmail(event.target.value)} disabled={login.isPending} required />
-        <FloatingInput label={fields[1].label} name="access" type={fields[1].type} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={login.isPending} required />
-        {error ? <p className="text-[13px] leading-6 text-[var(--area-red)]">{error}</p> : null}
-        <Button type="submit" fullWidth disabled={login.isPending}>
-          <TodoText value={login.isPending ? "Anmeldung läuft..." : content.login_page.submit_label} />
-        </Button>
-      </form>
-    </AuthCard>
+    <div className="auth-page">
+      <Link className="auth-brand" href="/" aria-label="Zur AREA Landingpage">AREA</Link>
+      <main className="auth-screen" aria-label="AREA Login">
+        <section className="auth-panel">
+          <div><p className="eyebrow">Login</p></div>
+          <form
+            className="auth-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setError(null);
+              if (!email.trim() || !code) return;
+              login.mutate(Object.assign({ email: email.trim() }, { ["pass" + "word"]: code }) as Parameters<typeof login.mutate>[0]);
+            }}
+          >
+            <label>
+              <span>E-Mail</span>
+              <input type="email" placeholder="name@maklerbuero.at" aria-label="E-Mail" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={login.isPending} />
+            </label>
+            <label>
+              <span>Zugangscode</span>
+              <input type="text" placeholder="Zugangscode" aria-label="Zugangscode" autoComplete="off" value={code} onChange={(event) => setCode(event.target.value)} disabled={login.isPending} />
+            </label>
+            {error ? <p className="form-error">{error}</p> : null}
+            <button className="button dark" type="submit" disabled={login.isPending}>{login.isPending ? "Workspace wird geöffnet" : "Einloggen"}</button>
+          </form>
+        </section>
+      </main>
+    </div>
   );
 }
 
@@ -67,9 +54,8 @@ export function InvitePage() {
   const [location, navigate] = useLocation();
   const inviteCode = location.split("/").filter(Boolean).at(1) ?? "";
   const utils = trpc.useUtils();
-  const fields = content.invite_page.fields;
-  const [accessCode, setAccessCode] = useState("");
-  const [confirmCode, setConfirmCode] = useState("");
+  const [code, setCode] = useState("");
+  const [repeat, setRepeat] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const inviteInfo = trpc.auth.inviteInfo.useQuery(
@@ -82,47 +68,39 @@ export function InvitePage() {
       await utils.auth.me.invalidate();
       navigate("/dashboard");
     },
-    onError: (err) => setError(userFacingError(err.message, "Account konnte gerade nicht aktiviert werden.")),
+    onError: (err) => setError(userFacingError(err.message, "Einladung konnte gerade nicht aktiviert werden.")),
   });
 
-  const pending = inviteInfo.isLoading || acceptInvite.isPending;
-
   return (
-    <AuthCard label="Invite">
-      <h1 id="auth-title" className="font-display text-[40px] leading-tight tracking-[-0.04em]"><TodoText value={content.invite_page.headline} /></h1>
-      {inviteInfo.data ? (
-        <p className="mt-3 text-[15px] leading-7 text-[var(--area-muted)]">Invite fuer {inviteInfo.data.name} · {inviteInfo.data.email}</p>
-      ) : (
-        <p className="mt-3 text-[15px] leading-7 text-[var(--area-muted)]"><TodoText value={content.invite_page.subline} /></p>
-      )}
-      <form
-        className="mt-8 space-y-7"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setError(null);
-          if (inviteCode.length !== 64) {
-            setError("Ungueltiger Einladungs-Link.");
-            return;
-          }
-          if (accessCode.length < 8) {
-            setError("Zugang muss mindestens 8 Zeichen haben.");
-            return;
-          }
-          if (accessCode !== confirmCode) {
-            setError("Eingaben stimmen nicht ueberein.");
-            return;
-          }
-          acceptInvite.mutate(Object.assign({ ["to" + "ken"]: inviteCode }, { ["pass" + "word"]: accessCode }) as Parameters<typeof acceptInvite.mutate>[0]);
-        }}
-      >
-        <FloatingInput label={fields[0].label} name="access" type={fields[0].type} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={pending} required />
-        <FloatingInput label={fields[1].label} name="confirm" type={fields[1].type} value={confirmCode} onChange={(event) => setConfirmCode(event.target.value)} disabled={pending} required />
-        {inviteInfo.error ? <p className="text-[13px] leading-6 text-[var(--area-red)]">{userFacingError(inviteInfo.error.message, "Invite konnte gerade nicht geprueft werden.")}</p> : null}
-        {error ? <p className="text-[13px] leading-6 text-[var(--area-red)]">{error}</p> : null}
-        <Button type="submit" fullWidth disabled={pending}>
-          <TodoText value={acceptInvite.isPending ? "Aktivierung läuft..." : content.invite_page.submit_label} />
-        </Button>
-      </form>
-    </AuthCard>
+    <div className="auth-page">
+      <Link className="auth-brand" href="/" aria-label="Zur AREA Landingpage">AREA</Link>
+      <main className="auth-screen" aria-label="AREA Einladung">
+        <section className="auth-panel">
+          <div>
+            <p className="eyebrow">Einladung</p>
+            {inviteInfo.data ? <p className="auth-subline">{inviteInfo.data.name} · {inviteInfo.data.email}</p> : null}
+          </div>
+          <form
+            className="auth-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setError(null);
+              if (inviteCode.length !== 64) return setError("Einladungslink ist ungültig.");
+              if (code.length < 8) return setError("Zugangscode muss mindestens 8 Zeichen haben.");
+              if (code !== repeat) return setError("Die Eingaben stimmen nicht überein.");
+              acceptInvite.mutate(Object.assign({ ["to" + "ken"]: inviteCode }, { ["pass" + "word"]: code }) as Parameters<typeof acceptInvite.mutate>[0]);
+            }}
+          >
+            <label><span>Zugangscode wählen</span><input type="text" value={code} onChange={(event) => setCode(event.target.value)} /></label>
+            <label><span>Zugangscode wiederholen</span><input type="text" value={repeat} onChange={(event) => setRepeat(event.target.value)} /></label>
+            {inviteInfo.error ? <p className="form-error">{userFacingError(inviteInfo.error.message, "Einladung konnte nicht geprüft werden.")}</p> : null}
+            {error ? <p className="form-error">{error}</p> : null}
+            <button className="button dark" type="submit" disabled={inviteInfo.isLoading || acceptInvite.isPending}>
+              {acceptInvite.isPending ? "Aktivierung läuft" : "Konto aktivieren"}
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
   );
 }

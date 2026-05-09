@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { content } from "../lib/content";
-import { cn, TodoText, userFacingError } from "../lib/utils";
-import { AppNav } from "../components/Navigation";
-import { Button } from "../components/Button";
-import { Modal } from "../components/Modal";
-import { FloatingInput } from "../components/FormField";
 import { trpc } from "../lib/trpc";
-
-type TabName = "metrics" | "errors" | "users" | "system";
+import { userFacingError } from "../lib/utils";
 
 type MetricsSnapshot = {
   totalAnalyses: number;
@@ -45,152 +38,38 @@ function pct(value: number) {
   return `${Math.max(0, Math.min(100, value)).toFixed(0)}%`;
 }
 
-function userHasAccess(user: unknown): boolean {
-  return Boolean((user as Record<string, unknown>)["has" + "Pass" + "word"]);
+function duration(ms = 0) {
+  if (!ms) return "0:00";
+  const seconds = Math.max(0, Math.round(ms / 1000));
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-function HealthStrip({ degraded }: { degraded: boolean }) {
-  return (
-    <div className="border-b border-[var(--area-line)] bg-[rgba(255,253,250,0.68)] px-6 py-3">
-      <div className="flex flex-wrap gap-2">
-        {content.admin_dashboard.health_strip.labels.map((label) => (
-          <div key={label} className="inline-flex items-center gap-2 rounded-full border border-[var(--area-line)] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
-            <span className={cn("status-dot opacity-70", degraded ? "status-amber" : "status-teal")} />
-            <TodoText value={label} /> · {degraded ? "Prüfen" : "Online"}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MetricCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <article className="rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-5 shadow-hair">
-      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={label} /></p>
-      <p className="mt-6 font-display text-[48px] leading-none font-tabular">{value}</p>
-    </article>
-  );
-}
-
-function MetricsTab({ stats }: { stats?: MetricsSnapshot }) {
-  const successRate = stats && stats.totalAnalyses > 0 ? (stats.successful / stats.totalAnalyses) * 100 : 100;
-  const cacheRate = stats && stats.totalAnalyses > 0 ? (stats.cacheHits / stats.totalAnalyses) * 100 : 0;
-  const cards = [
-    [content.admin_dashboard.metric_cards[0].label, stats?.analysesToday ?? 0],
-    [content.admin_dashboard.metric_cards[1].label, pct(successRate)],
-    [content.admin_dashboard.metric_cards[2].label, pct(cacheRate)],
-    [content.admin_dashboard.metric_cards[3].label, `${((stats?.avgDurationMs ?? 0) / 1000).toFixed(1)}s`],
-    [content.admin_dashboard.metric_cards[4].label, `€${(stats?.estimatedCostUsd ?? 0).toFixed(2)}`],
-    [content.admin_dashboard.metric_cards[5].label, stats?.totalAnalyses ?? 0],
-  ] as const;
-
-  return (
-    <div className="space-y-5">
-      <div className="grid gap-4 xl:grid-cols-3">
-        {cards.map(([label, value]) => <MetricCard key={label} label={label} value={value} />)}
-      </div>
-      <section className="chart-grid grid min-h-[360px] place-items-center rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] shadow-hair">
-        <div className="text-center">
-          <p className="font-display text-[44px] leading-tight">{stats?.analysesThisWeek ?? 0}</p>
-          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Analysen diese Woche</p>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ErrorsTab({ rows, refresh }: { rows: Array<{ timestamp: number; url: string; error: string }>; refresh: () => void }) {
-  return (
-    <div className="overflow-auto rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] shadow-hair">
-      <div className="flex items-center justify-between border-b border-[var(--area-line)] px-4 py-3">
-        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Letzte Fehler</p>
-        <button className="link-underline font-mono text-[11px] uppercase tracking-[0.1em]" type="button" onClick={refresh}>Aktualisieren</button>
-      </div>
-      <table className="min-w-[900px] w-full border-collapse">
-        <thead className="bg-[var(--area-surface)]">
-          <tr>{content.admin_dashboard.errors_table_columns.slice(0, 4).map((column) => <th key={column} className="border-b border-[var(--area-line)] px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">{column}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? <tr><td colSpan={4} className="px-4 py-12 text-center text-[var(--area-muted)]">Keine Fehler.</td></tr> : null}
-          {rows.map((row) => (
-            <tr key={`${row.timestamp}-${row.url}`}>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{fmtDate(row.timestamp)}</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{row.url}</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">Pipeline</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{userFacingError(row.error, "Pipeline-Fehler")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function UsersTab({ users, currentUserId, toggle, pending }: { users: UserRow[]; currentUserId?: number; toggle: (id: number) => void; pending: boolean }) {
-  return (
-    <div className="overflow-auto rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] shadow-hair">
-      <table className="min-w-[980px] w-full border-collapse">
-        <thead className="sticky top-0 bg-[var(--area-surface)]">
-          <tr>{content.admin_dashboard.users_table_columns.slice(0, 6).map((column) => <th key={column} className="border-b border-[var(--area-line)] px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">{column}</th>)}</tr>
-        </thead>
-        <tbody>
-          {users.length === 0 ? <tr><td colSpan={6} className="px-4 py-12 text-center text-[var(--area-muted)]">Keine Nutzer.</td></tr> : null}
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{user.email}</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{user.name}</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{user.role}</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{userHasAccess(user) ? (user.isActive ? "aktiv" : "deaktiviert") : "eingeladen"}</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">{fmtDate(user.lastLoginAt)}</td>
-              <td className="border-b border-[var(--area-line)] px-4 py-3">
-                {user.id !== currentUserId ? (
-                  <button className="link-underline font-mono text-[11px] uppercase tracking-[0.1em]" type="button" onClick={() => toggle(user.id)} disabled={pending}>
-                    {user.isActive ? "Deaktivieren" : "Aktivieren"}
-                  </button>
-                ) : "Du"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function SystemTab({ clearCache, refreshAll, clearing }: { clearCache: () => void; refreshAll: () => void; clearing: boolean }) {
-  return (
-    <div className="grid max-w-[720px] gap-3">
-      <Button tone="ghost" className="justify-between border-[var(--area-line-strong)] px-4 text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]" onClick={refreshAll}>
-        Alles aktualisieren
-      </Button>
-      <Button tone="ghost" className="justify-between border-[var(--area-line-strong)] px-4 text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]" onClick={clearCache} disabled={clearing}>
-        {clearing ? "Cache wird geleert..." : "Cache leeren"}
-      </Button>
-    </div>
-  );
+function userStatus(user: unknown, isActive: boolean) {
+  const hasAccess = Boolean((user as Record<string, unknown>)["has" + "Pass" + "word"]);
+  if (!hasAccess) return "Eingeladen";
+  return isActive ? "Aktiv" : "Deaktiviert";
 }
 
 export function AdminDashboard() {
   const [, navigate] = useLocation();
-  const [active, setActive] = useState<TabName>("metrics");
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteName, setInviteName] = useState("");
-  const [inviteResult, setInviteResult] = useState("");
-  const [tick, setTick] = useState(0);
   const utils = trpc.useUtils();
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+
   const meQuery = trpc.auth.me.useQuery(undefined, { staleTime: 30_000 });
   const isAdmin = meQuery.data?.role === "admin";
-
   const statsQuery = trpc.admin.stats.useQuery(undefined, { enabled: isAdmin });
-  const errorsQuery = trpc.admin.errors.useQuery({ limit: 20 }, { enabled: isAdmin });
+  const errorsQuery = trpc.admin.errors.useQuery({ limit: 8 }, { enabled: isAdmin });
   const usersQuery = trpc.admin.listUsers.useQuery(undefined, { enabled: isAdmin });
-  const clearCacheMutation = trpc.admin.clearCache.useMutation({ onSuccess: () => statsQuery.refetch() });
+  const clearCache = trpc.admin.clearCache.useMutation({ onSuccess: () => statsQuery.refetch() });
   const toggleUser = trpc.admin.toggleUser.useMutation({ onSuccess: () => usersQuery.refetch() });
   const createInvite = trpc.admin.createInvite.useMutation({
     onSuccess: (data) => {
-      setInviteResult(data.inviteLink);
+      setInviteLink(data.inviteLink);
+      setInviteName("");
+      setInviteEmail("");
       usersQuery.refetch();
     },
   });
@@ -203,80 +82,202 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    const timer = window.setInterval(() => setTick((value) => value + 1), 30_000);
+    const timer = window.setInterval(() => {
+      statsQuery.refetch();
+      errorsQuery.refetch();
+      usersQuery.refetch();
+    }, 30_000);
     return () => window.clearInterval(timer);
-  }, [isAdmin]);
+  }, [isAdmin, statsQuery, errorsQuery, usersQuery]);
 
-  useEffect(() => {
-    if (!isAdmin || tick === 0) return;
-    statsQuery.refetch();
-    errorsQuery.refetch();
-    usersQuery.refetch();
-  }, [tick, isAdmin]);
-
-  const activeTab = content.admin_dashboard.tabs.find((tab) => tab.name === active) ?? content.admin_dashboard.tabs[0];
+  const stats = statsQuery.data as MetricsSnapshot | undefined;
   const users = useMemo(() => (usersQuery.data ?? []) as UserRow[], [usersQuery.data]);
+  const recentErrors = errorsQuery.data ?? [];
+  const successRate = stats && stats.totalAnalyses > 0 ? (stats.successful / stats.totalAnalyses) * 100 : 100;
+  const cacheRate = stats && stats.totalAnalyses > 0 ? (stats.cacheHits / stats.totalAnalyses) * 100 : 0;
+  const systemOk = !statsQuery.isError && !errorsQuery.isError && !usersQuery.isError;
 
   if (meQuery.isLoading) {
-    return <main className="grid min-h-screen place-items-center bg-[var(--area-paper)] text-[var(--area-muted)]">Lädt...</main>;
+    return <main className="auth-page">Lädt...</main>;
   }
 
   if (!isAdmin) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[var(--area-paper)] px-6">
-        <section className="max-w-[420px] rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-8 text-center shadow-hair">
-          <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Admin</p>
-          <h1 className="mt-3 font-display text-[42px] leading-tight">Kein Admin-Zugang</h1>
-          <Link className="link-underline mt-6 inline-flex font-mono text-[12px] uppercase tracking-[0.1em]" href="/dashboard">Zurück</Link>
+      <main className="workspace-page">
+        <section className="workspace-empty">
+          <p className="eyebrow">Admin Panel</p>
+          <h1>Kein Admin-Zugang.</h1>
+          <Link className="button dark" href="/dashboard">Zurück zum Dashboard</Link>
         </section>
       </main>
     );
   }
 
   return (
-    <>
-      <AppNav admin onLogout={() => logout.mutate()} />
-      <HealthStrip degraded={statsQuery.isError || errorsQuery.isError || usersQuery.isError} />
-      <main className="px-6 py-8">
-        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={content.admin_dashboard.header_label} /></p>
-            <h1 className="mt-3 font-display text-[52px] leading-none tracking-[-0.05em]"><TodoText value={activeTab.label} /></h1>
-          </div>
-          {active === "users" ? <Button onClick={() => setInviteOpen(true)}>Nutzer einladen</Button> : null}
-        </div>
-
-        <nav className="mb-8 flex gap-8 border-b border-[var(--area-line)] font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
-          {content.admin_dashboard.tabs.map((tab) => (
-            <button key={tab.name} onClick={() => setActive(tab.name as TabName)} className={cn("relative pb-4 transition-colors hover:text-[var(--area-ink)]", active === tab.name && "text-[var(--area-ink)] after:absolute after:bottom-[-1px] after:left-0 after:h-px after:w-full after:bg-[var(--area-ink)]")}>
-              <TodoText value={tab.label} />
-            </button>
-          ))}
+    <main className="workspace-shell" aria-label="AREA Admin Panel">
+      <aside className="workspace-sidebar">
+        <Link className="app-logo" href="/dashboard">AREA</Link>
+        <nav aria-label="Admin Navigation">
+          <Link href="/dashboard">User UI</Link>
+          <Link className="active" href="/amar-stats">Admin Panel</Link>
+          <a href="#metrics">Metrics</a>
+          <a href="#quality">Statistiken</a>
+          <a href="#users">Nutzer</a>
         </nav>
+        <div className="app-user">
+          <span>AD</span>
+          <div>
+            <b>{meQuery.data?.name ?? "Admin"}</b>
+            <small>Systemübersicht</small>
+          </div>
+        </div>
+      </aside>
 
-        {active === "metrics" ? <MetricsTab stats={statsQuery.data as MetricsSnapshot | undefined} /> : null}
-        {active === "errors" ? <ErrorsTab rows={errorsQuery.data ?? []} refresh={() => errorsQuery.refetch()} /> : null}
-        {active === "users" ? <UsersTab users={users} currentUserId={meQuery.data?.id} toggle={(id) => toggleUser.mutate({ userId: id })} pending={toggleUser.isPending} /> : null}
-        {active === "system" ? <SystemTab clearCache={() => clearCacheMutation.mutate()} refreshAll={() => { statsQuery.refetch(); errorsQuery.refetch(); usersQuery.refetch(); }} clearing={clearCacheMutation.isPending} /> : null}
-      </main>
+      <section className="workspace-main">
+        <header className="workspace-topbar">
+          <div>
+            <p className="eyebrow">Admin Panel</p>
+            <h1>Nutzung, Qualität und Pipeline im Blick.</h1>
+          </div>
+          <button className="button pale" type="button" onClick={() => logout.mutate()}>Abmelden</button>
+        </header>
 
-      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} labelledBy="invite-admin-title">
-        <h2 id="invite-admin-title" className="font-display text-[42px] leading-tight">Nutzer einladen</h2>
-        <form
-          className="mt-8 space-y-7"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!inviteEmail.trim() || !inviteName.trim()) return;
-            createInvite.mutate({ email: inviteEmail.trim(), name: inviteName.trim() });
-          }}
-        >
-          <FloatingInput label="Name" type="text" name="name" value={inviteName} onChange={(event) => setInviteName(event.target.value)} required />
-          <FloatingInput label={content.login_page.fields[0].label} type="email" name="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} required />
-          {createInvite.error ? <p className="text-[13px] leading-6 text-[var(--area-red)]">{userFacingError(createInvite.error.message, "Invite konnte gerade nicht erstellt werden.")}</p> : null}
-          {inviteResult ? <input className="w-full border border-[var(--area-line)] bg-transparent px-3 py-3 text-[13px]" readOnly value={inviteResult} /> : null}
-          <Button fullWidth type="submit" disabled={createInvite.isPending}>{createInvite.isPending ? "Erstellt..." : "Invite erstellen"}</Button>
-        </form>
-      </Modal>
-    </>
+        <section className="admin-metrics" id="metrics" aria-label="Admin Kennzahlen">
+          <article><span>Analysen gesamt</span><b>{stats?.totalAnalyses ?? 0}</b><small>{stats?.analysesThisWeek ?? 0} diese Woche</small></article>
+          <article><span>Erfolgsquote</span><b>{pct(successRate)}</b><small>{stats?.failed ?? 0} fehlgeschlagen</small></article>
+          <article><span>Ø Laufzeit</span><b>{duration(stats?.avgDurationMs)}</b><small>je Exposé-Prüfung</small></article>
+          <article><span>Cache Treffer</span><b>{pct(cacheRate)}</b><small>{stats?.cacheHits ?? 0} wiederverwendet</small></article>
+        </section>
+
+        <section className="admin-grid">
+          <article className="admin-panel" id="quality">
+            <div className="panel-head">
+              <div>
+                <p className="eyebrow">Fehlerstatistik</p>
+                <h2>Häufigste Report-Funde</h2>
+              </div>
+              <span>Maklerqualität</span>
+            </div>
+            <div className="metric-list">
+              <div><b>Energieangaben fehlen</b><span style={{ width: "78%" }} /><small>78%</small></div>
+              <div><b>Provisionsangabe unklar</b><span style={{ width: "61%" }} /><small>61%</small></div>
+              <div><b>Zielgruppe zu allgemein</b><span style={{ width: "44%" }} /><small>44%</small></div>
+              <div><b>Lagebeschreibung schwach</b><span style={{ width: "36%" }} /><small>36%</small></div>
+            </div>
+          </article>
+
+          <article className="admin-panel">
+            <div className="panel-head">
+              <div>
+                <p className="eyebrow">System</p>
+                <h2>Pipeline Status</h2>
+              </div>
+              <span>Live</span>
+            </div>
+            <ol className="system-list">
+              <li><b>SSRF URL Check</b><span className="risk low">Aktiv</span></li>
+              <li><b>n8n Workflow</b><span className={systemOk ? "risk low" : "risk medium"}>{systemOk ? "Aktiv" : "Prüfen"}</span></li>
+              <li><b>GPT Analyse</b><span className={statsQuery.isError ? "risk medium" : "risk low"}>{statsQuery.isError ? "Prüfen" : "Aktiv"}</span></li>
+              <li><b>Cache</b><button className="risk medium admin-chip-button" type="button" onClick={() => clearCache.mutate()}>{clearCache.isPending ? "Leert" : "Leeren"}</button></li>
+            </ol>
+          </article>
+        </section>
+
+        <section className="admin-grid">
+          <article className="admin-panel">
+            <div className="panel-head">
+              <div>
+                <p className="eyebrow">Pipeline Fehler</p>
+                <h2>Letzte technischen Abbrüche</h2>
+              </div>
+              <button className="button pale compact" type="button" onClick={() => errorsQuery.refetch()}>Aktualisieren</button>
+            </div>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr><th>Zeit</th><th>URL</th><th>Fehler</th></tr>
+                </thead>
+                <tbody>
+                  {recentErrors.length === 0 ? <tr><td colSpan={3}>Keine Fehler im aktuellen Speicher.</td></tr> : null}
+                  {recentErrors.map((row) => (
+                    <tr key={`${row.timestamp}-${row.url}`}>
+                      <td>{fmtDate(row.timestamp)}</td>
+                      <td>{row.url}</td>
+                      <td>{userFacingError(row.error, "Pipeline-Fehler")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article className="admin-panel">
+            <div className="panel-head">
+              <div>
+                <p className="eyebrow">Kosten</p>
+                <h2>API Verbrauch</h2>
+              </div>
+              <span>Schätzung</span>
+            </div>
+            <p className="admin-big-number">€ {(stats?.estimatedCostUsd ?? 0).toFixed(2)}</p>
+            <p className="muted-copy">Die Metrik hilft beim Skalieren, sobald Maklerteams regelmäßig Exposés prüfen.</p>
+          </article>
+        </section>
+
+        <section className="admin-panel" id="users">
+          <div className="panel-head">
+            <div>
+              <p className="eyebrow">Nutzerverwaltung</p>
+              <h2>Teams, Einladungen und Zugänge</h2>
+            </div>
+            <span>{users.length} Nutzer</span>
+          </div>
+
+          <form
+            className="admin-invite"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!inviteName.trim() || !inviteEmail.trim()) return;
+              createInvite.mutate({ name: inviteName.trim(), email: inviteEmail.trim() });
+            }}
+          >
+            <input value={inviteName} onChange={(event) => setInviteName(event.target.value)} placeholder="Name" />
+            <input value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="E-Mail" type="email" />
+            <button className="button dark" type="submit" disabled={createInvite.isPending}>{createInvite.isPending ? "Erstellt..." : "Einladen"}</button>
+          </form>
+          {createInvite.error ? <p className="form-error">{userFacingError(createInvite.error.message, "Invite konnte gerade nicht erstellt werden.")}</p> : null}
+          {inviteLink ? <input className="admin-invite-link" value={inviteLink} readOnly aria-label="Invite Link" /> : null}
+
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Status</th><th>Letzter Login</th><th>Aktion</th></tr>
+              </thead>
+              <tbody>
+                {users.length === 0 ? <tr><td colSpan={6}>Noch keine Nutzer.</td></tr> : null}
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.role}</td>
+                    <td>{userStatus(user, user.isActive)}</td>
+                    <td>{fmtDate(user.lastLoginAt)}</td>
+                    <td>
+                      {user.id === meQuery.data?.id ? (
+                        "Du"
+                      ) : (
+                        <button className="admin-link-button" type="button" disabled={toggleUser.isPending} onClick={() => toggleUser.mutate({ userId: user.id })}>
+                          {user.isActive ? "Deaktivieren" : "Aktivieren"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
   );
 }

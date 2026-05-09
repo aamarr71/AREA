@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AREA Admin Panel Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="workspace-page admin-page">
+    <main class="workspace-shell" aria-label="AREA Admin Panel">
+      <aside class="workspace-sidebar">
+        <a class="app-logo" href="./dashboard.html">AREA</a>
+        <nav aria-label="Admin Navigation">
+          <a href="./dashboard.html">User UI</a>
+          <a class="active" href="./admin.html">Admin Panel</a>
+          <a href="#metrics">Metrics</a>
+          <a href="#quality">Statistiken</a>
+        </nav>
+        <div class="app-user">
+          <span>AD</span>
+          <div>
+            <b>Admin</b>
+            <small>Systemübersicht</small>
+          </div>
+        </div>
+      </aside>
+
+      <section class="workspace-main">
+        <header class="workspace-topbar">
+          <div>
+            <p class="eyebrow">Admin Panel</p>
+            <h1>Nutzung, Qualität und Pipeline im Blick.</h1>
+          </div>
+          <a class="button pale" href="./app.html">Abmelden</a>
+        </header>
+
+        <section class="admin-metrics" id="metrics" aria-label="Admin Kennzahlen">
+          <article><span>Analysen 30 Tage</span><b>418</b><small>+19% zum Vormonat</small></article>
+          <article><span>Erfolgsquote</span><b>96%</b><small>n8n Pipeline abgeschlossen</small></article>
+          <article><span>Ø Laufzeit</span><b>1:42</b><small>Minuten je Exposé</small></article>
+          <article><span>PDF Exporte</span><b>271</b><small>durch Maklerteams</small></article>
+        </section>
+
+        <section class="admin-grid">
+          <article class="admin-panel" id="quality">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Fehlerstatistik</p>
+                <h2>Häufigste Report-Funde</h2>
+              </div>
+              <span>30 Tage</span>
+            </div>
+            <div class="metric-list">
+              <div><b>Energieangaben fehlen</b><span style="width: 78%"></span><small>78%</small></div>
+              <div><b>Provisionsangabe unklar</b><span style="width: 61%"></span><small>61%</small></div>
+              <div><b>Zielgruppe zu allgemein</b><span style="width: 44%"></span><small>44%</small></div>
+              <div><b>Lagebeschreibung schwach</b><span style="width: 36%"></span><small>36%</small></div>
+            </div>
+          </article>
+
+          <article class="admin-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">System</p>
+                <h2>Pipeline Status</h2>
+              </div>
+              <span>Live</span>
+            </div>
+            <ol class="system-list">
+              <li><b>SSRF URL Check</b><span class="risk low">Aktiv</span></li>
+              <li><b>n8n Webhook</b><span class="risk low">Aktiv</span></li>
+              <li><b>GPT Analyse</b><span class="risk low">Aktiv</span></li>
+              <li><b>PDF Export</b><span class="risk medium">Queue</span></li>
+            </ol>
+          </article>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

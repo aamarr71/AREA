@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AREA Frontend Merge Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#landing" aria-label="AREA Start">AREA</a>
+      <nav aria-label="Hauptnavigation">
+        <a href="#flow">Wie es funktioniert</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">Häufige Fragen</a>
+        <a href="#analysis">Analyse</a>
+        <a href="#report">Report</a>
+      </nav>
+      <a class="nav-cta" href="#demo">Demo vereinbaren</a>
+    </header>
+
+    <main>
+      <section id="landing" class="hero">
+        <div class="grid-bg"></div>
+        <div class="hero-inner">
+          <p class="eyebrow">Für Wiener Immobilienmakler</p>
+          <h1>
+            <span>Die meisten Exposés haben</span>
+            <span>3-5 Pflichtfehler.</span>
+            <span class="muted">Auch deine.</span>
+          </h1>
+          <p class="hero-subline">AREA zeigt sie dir - in 30 Sekunden, bevor's der Käufer sieht.</p>
+          <div class="hero-actions">
+            <a class="button dark" href="#analysis">Demo vereinbaren</a>
+            <a class="button link" href="#flow">Wie es funktioniert</a>
+          </div>
+        </div>
+        <div class="hero-metrics punch-list" aria-label="AREA Prüfversprechen">
+          <article>
+            <span>01 - Prüfung</span>
+            <strong>10</strong>
+            <p>Pflichtprüfungen</p>
+          </article>
+          <article>
+            <span>02 - Fehler</span>
+            <strong>2-4</strong>
+            <p>Pflichtfehler im Normalfall gefunden</p>
+          </article>
+          <article>
+            <span>03 - Verkauf</span>
+            <strong>34%</strong>
+            <p>schneller zum Verkauf</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="flow" class="section flow-section">
+        <div class="section-head">
+          <p class="eyebrow">So arbeitet AREA</p>
+          <h2>Drei Stufen, aber ohne Textwand.</h2>
+          <p>AREA baut den Report Abschnitt für Abschnitt auf: erst Rohdaten, dann Pflichtfehler, dann die konkrete Verkaufsentscheidung.</p>
+        </div>
+
+        <div class="flow-stage apple-build">
+          <article class="listing-card">
+            <p class="mono">Mariahilfer Straße 87, 1060 Wien</p>
+            <h3>Charmante 3-Zimmer-Altbauwohnung im Herzen von Mariahilf</h3>
+            <dl>
+              <div class="field-row" data-build-step="1"><dt>Kaufpreis</dt><dd>€ 489.000</dd></div>
+              <div class="field-row" data-build-step="1"><dt>Wohnfläche</dt><dd>78 m²</dd></div>
+              <div class="field-row" data-build-step="1"><dt>Zimmer</dt><dd>3</dd></div>
+              <div class="field-row" data-build-step="2"><dt>Baujahr</dt><dd class="warn">1908</dd></div>
+              <div class="field-row" data-build-step="2"><dt>Energieausweis</dt><dd class="bad">fehlt</dd></div>
+              <div class="field-row" data-build-step="2"><dt>Betriebskosten</dt><dd class="warn">nicht angegeben</dd></div>
+              <div class="field-row" data-build-step="2"><dt>Provision</dt><dd class="bad">nicht ausgewiesen</dd></div>
+            </dl>
+            <p class="flag field-row" data-build-step="3">Als "Neubau-Charakter" beworben</p>
+          </article>
+
+          <div class="flow-panel scroll-report" aria-label="Scrollender Analyseaufbau">
+            <article class="flow-card active" data-build-card="1">
+              <p class="eyebrow">Stufe 1 - Datenextraktion</p>
+              <h3>10 Felder erkannt</h3>
+              <div class="mini-table">
+                <div><span>Adresse</span><b>Mariahilfer Straße 87</b></div>
+                <div><span>Kaufpreis</span><b>€ 489.000</b></div>
+                <div><span>Wohnfläche</span><b>78 m²</b></div>
+                <div><span>Energie</span><b>fehlt</b></div>
+              </div>
+            </article>
+
+            <article class="flow-card active" data-build-card="2">
+              <p class="eyebrow">Stufe 2 - Qualitätsprüfung</p>
+              <div class="split-metric">
+                <div>
+                  <span>Pflichtfehler</span>
+                  <strong>4</strong>
+                </div>
+                <div>
+                  <span>Textqualität</span>
+                  <strong>62/100</strong>
+                  <div class="bar"><i style="width: 62%"></i></div>
+                </div>
+              </div>
+              <ul class="compact-list status-list">
+                <li><span class="severity-dot red"></span><b>Energieausweis fehlt</b></li>
+                <li><span class="severity-dot red"></span><b>Provision nicht ausgewiesen</b></li>
+                <li><span class="severity-dot amber"></span><b>Baujahr widerspricht "Neubau"</b></li>
+              </ul>
+            </article>
+
+            <article class="flow-card active" data-build-card="3">
+              <p class="eyebrow">Stufe 3 - Verkaufsstrategie</p>
+              <h3>Korrigieren, dann verkaufen.</h3>
+              <div class="strategy-grid">
+                <span>Markt</span><b>8% unter Bezirks-Ø</b>
+                <span>Zielgruppe</span><b>Erstkäufer, Paare, Anleger</b>
+                <span>Dauer</span><b>47 Tage</b>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="analysis" class="section analysis-section">
+        <div class="section-head">
+          <p class="eyebrow">Analyse-Seite</p>
+          <h2>Vorher links. Nachher rechts.</h2>
+        </div>
+
+        <div class="compare-reports">
+          <article class="mini-report before">
+            <div class="mini-report-head">
+              <p class="eyebrow">Vorher</p>
+              <span class="status-pill danger">Nicht veröffentlichen</span>
+            </div>
+            <div class="expose-sheet expose-before">
+              <p class="mono">Mariahilfer Straße 87, 1060 Wien</p>
+              <h3>Charmante 3-Zimmer-Altbauwohnung im Herzen von Mariahilf</h3>
+              <div class="expose-facts">
+                <div><span>Kaufpreis</span><b>€ 489.000</b></div>
+                <div><span>Wohnfläche</span><b>78 m²</b></div>
+                <div><span>Baujahr</span><b class="warn">1908</b></div>
+                <div><span>Energie</span><b class="bad">fehlt</b></div>
+                <div><span>Provision</span><b class="bad">nicht ausgewiesen</b></div>
+                <div><span>Betriebskosten</span><b class="warn">nicht angegeben</b></div>
+              </div>
+              <p>
+                Helle Wohnung mit <mark class="amber-mark">Neubau-Charakter</mark>,
+                klassischer Raumaufteilung und guter Lage. Weitere Details auf Anfrage.
+              </p>
+              <div class="expose-result danger">
+                <b>4 Pflichtfehler</b>
+                <span>Viele Rückfragen vor Veröffentlichung</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="mini-report after">
+            <div class="mini-report-head">
+              <p class="eyebrow">Nachher mit AREA</p>
+              <span class="status-pill good">Veröffentlichbar</span>
+            </div>
+            <div class="expose-sheet expose-after">
+              <p class="mono">Mariahilfer Straße 87, 1060 Wien</p>
+              <h3>Altbauwohnung mit modernisiertem Wohngefühl in Mariahilf</h3>
+              <div class="expose-facts">
+                <div><span>Kaufpreis</span><b>€ 489.000</b></div>
+                <div><span>Wohnfläche</span><b>78 m²</b></div>
+                <div><span>Baujahr</span><b>1908, modernisiert</b></div>
+                <div><span>Energie</span><b>HWB 78 / fGEE 1,12</b></div>
+                <div><span>Provision</span><b>3% zzgl. USt., Käufer</b></div>
+                <div><span>Betriebskosten</span><b>€ 268 / Monat</b></div>
+              </div>
+              <p>
+                Gepflegter Altbau mit hoher Raumwirkung, klaren Pflichtangaben und
+                guter Preisposition im Bezirk.
+              </p>
+              <div class="expose-result good">
+                <b>0 kritische Fehler</b>
+                <span>Direkt scanbar und veröffentlichbar</span>
+              </div>
+            </div>
+            <span class="example-note">*Beispiel</span>
+          </article>
+        </div>
+      </section>
+
+      <section id="report" class="section report-section">
+        <div class="report-toolbar">
+          <div>
+            <p class="eyebrow">AREA Report</p>
+            <h2>Schöner Report, aber scanbar.</h2>
+          </div>
+          <div class="segmented" role="tablist" aria-label="Report Ansicht">
+            <button class="active" type="button" data-view="visual">Visueller Report</button>
+            <button type="button" data-view="summary">Kurzfassung</button>
+          </div>
+        </div>
+
+        <div class="report-view active" data-report-view="visual">
+          <div class="report-layout">
+            <aside class="report-summary-card">
+              <span class="status-pill danger">Nicht veröffentlichen</span>
+              <h3>4 Pflichtfehler</h3>
+              <p>Das Exposé hat rechtliche und vertriebliche Lücken. Zwei Punkte sollten vor Veröffentlichung zwingend korrigiert werden.</p>
+              <div class="confidence">
+                <div class="quality-meter confidence-meter">
+                  <b>95%</b>
+                  <span>Konfidenz</span>
+                  <div class="bar light"><i style="width: 95%"></i></div>
+                </div>
+                <div class="quality-meter">
+                  <b>62/100</b>
+                  <span>Textqualität</span>
+                  <div class="bar light"><i style="width: 62%"></i></div>
+                </div>
+              </div>
+              <a href="https://www.wko.at/service/wirtschaftsrecht-gewerberecht/energieausweis-pflichten" target="_blank" rel="noreferrer">Energieportal öffnen</a>
+              <a href="https://www.wko.at/branchen/information-consulting/immobilien-vermoegenstreuhaender/provision" target="_blank" rel="noreferrer">Provisionsregel prüfen</a>
+              <a href="https://www.wien.gv.at/flaechenwidmung/public/" target="_blank" rel="noreferrer">Flächenwidmung Wien</a>
+            </aside>
+
+            <div class="report-main">
+              <section class="report-card object-card">
+                <div>
+                  <p class="eyebrow">Objektdaten</p>
+                  <h3>Charmante 3-Zimmer-Altbauwohnung im Herzen von Mariahilf</h3>
+                </div>
+                <div class="data-grid">
+                  <div><span>Kaufpreis</span><b>€ 489.000</b></div>
+                  <div><span>Preis/m²</span><b>€ 6.269</b></div>
+                  <div><span>Wohnfläche</span><b>78 m²</b></div>
+                  <div><span>Baujahr</span><b>1908</b></div>
+                </div>
+              </section>
+
+              <section class="report-card">
+                <div class="card-title-row">
+                  <div>
+                    <p class="eyebrow">Qualitätsprüfung</p>
+                    <h3>Analyse</h3>
+                  </div>
+                  <span class="score danger">Hoches Risiko</span>
+                </div>
+                <div class="finding-list">
+                  <article>
+                    <span class="dot red"></span>
+                    <div><b>Energieausweis fehlt</b><p>EAVG Pflichtangabe. HWB und fGEE ergänzen.</p></div>
+                    <a href="https://www.oesterreich.gv.at/themen/bauen_und_wohnen/energieausweis.html" target="_blank" rel="noreferrer">Quelle</a>
+                  </article>
+                  <article>
+                    <span class="dot red"></span>
+                    <div><b>Provision nicht ausgewiesen</b><p>Zahler und Höhe im Inserat klar machen.</p></div>
+                    <a href="https://www.wko.at/branchen/information-consulting/immobilien-vermoegenstreuhaender/provision" target="_blank" rel="noreferrer">Quelle</a>
+                  </article>
+                  <article>
+                    <span class="dot amber"></span>
+                    <div><b>Widerspruch: Baujahr vs. Neubau</b><p>Irreführungsrisiko senken, Formulierung ändern.</p></div>
+                    <button type="button" class="ghost-small" data-copy="Altbau mit modernisiertem Wohngefühl und klassischer Raumhöhe.">Textbaustein</button>
+                  </article>
+                </div>
+              </section>
+
+              <section class="report-card action-card">
+                <div>
+                  <p class="eyebrow">Verkaufsstrategie</p>
+                  <h3>Nach Korrektur ist das Objekt gut vermarktbar.</h3>
+                </div>
+                <div class="strategy-columns">
+                  <article><span>Preisposition</span><b>8% unter Bezirks-Ø</b><p>Gutes Argument nach Pflichtkorrektur.</p></article>
+                  <article><span>Zielgruppe</span><b>Paare, Erstkäufer, Anleger</b><p>Fokus auf Mikrolage und Altbaugefühl.</p></article>
+                  <article><span>Verkaufsdauer</span><b>47 Tage</b><p>Bei vollständigen Angaben realistisch.</p></article>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-view" data-report-view="summary">
+          <article class="summary-sheet">
+            <div class="summary-title">
+              <span class="status-pill danger">Kurzfassung</span>
+              <h3>Was muss ich jetzt tun?</h3>
+            </div>
+            <ol>
+              <li><b>Energieausweis nachtragen:</b> HWB und fGEE ins Inserat schreiben und Dokument bereithalten.</li>
+              <li><b>Provision konkretisieren:</b> Höhe, USt. und wer zahlt sichtbar ergänzen.</li>
+              <li><b>"Neubau-Charakter" ersetzen:</b> Besser: "klassischer Altbau mit modernisiertem Wohngefühl".</li>
+              <li><b>Betriebskosten ergänzen:</b> Monatliche BK mit Aufschlüsselung angeben.</li>
+              <li><b>Nach den Fixes verkaufen:</b> Preis wirkt attraktiv, Zielgruppe klar, erwartete Verkaufsdauer ca. 47 Tage.</li>
+            </ol>
+            <div class="summary-actions">
+              <button class="button dark" type="button">Kurzfassung kopieren</button>
+              <button class="button pale" type="button">Als PDF vormerken</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="pricing" class="section pricing-section">
+        <div class="section-head">
+          <p class="eyebrow">Pricing</p>
+          <h2>Drei Pakete. Ein klares Ziel.</h2>
+          <p>Wähle nach Volumen. Jede Variante prüft Exposés auf Pflichtangaben, Widersprüche und Verkaufsrisiko.</p>
+        </div>
+
+        <div class="pricing-grid">
+          <article class="price-card">
+            <div>
+              <h3>Starter</h3>
+              <p>Für Einzel-Makler.</p>
+            </div>
+            <div class="price">
+              <span>€</span>
+              <strong>49</strong>
+              <em>/Monat</em>
+            </div>
+            <div class="quota">20 Analysen / Monat</div>
+            <ul>
+              <li>Alle 3 Analyse-Stufen</li>
+              <li>Alle 10 Pflichtprüfungen</li>
+              <li>Wiener Bezirksdaten</li>
+              <li>Report-Export als PDF</li>
+              <li>Email-Support</li>
+            </ul>
+            <a class="button dark" href="#demo">Demo vereinbaren</a>
+          </article>
+
+          <article class="price-card featured">
+            <div>
+              <span class="choice-pill">Beliebteste Wahl</span>
+              <h3>Professional</h3>
+              <p>Für aktive Makler mit Volumen.</p>
+            </div>
+            <div class="price">
+              <span>€</span>
+              <strong>149</strong>
+              <em>/Monat</em>
+            </div>
+            <div class="quota">100 Analysen / Monat</div>
+            <ul>
+              <li>Alles aus Starter</li>
+              <li>Verkaufsstrategie-Modul</li>
+              <li>Prioritäts-Analyse</li>
+              <li>Deutsch-Englisch Textvarianten</li>
+              <li>Telefon-Support während Bürozeiten</li>
+            </ul>
+            <a class="button pale" href="#demo">Demo vereinbaren</a>
+          </article>
+
+          <article class="price-card">
+            <div>
+              <h3>Agentur</h3>
+              <p>Für Maklerbüros mit mehreren Köpfen.</p>
+            </div>
+            <div class="price">
+              <span>€</span>
+              <strong>399</strong>
+              <em>/Monat</em>
+            </div>
+            <div class="quota">Unbegrenzt</div>
+            <ul>
+              <li>Alles aus Professional</li>
+              <li>Bis zu 10 Team-Mitglieder</li>
+              <li>Analyse-Historie pro Mitglied</li>
+              <li>Custom-Branding im Report</li>
+              <li>Persönlicher Account-Manager</li>
+            </ul>
+            <a class="button dark" href="#demo">Demo vereinbaren</a>
+          </article>
+        </div>
+        <p class="pricing-note">Alle Preise zzgl. 20% USt. Monatlich kündbar.</p>
+      </section>
+
+      <section id="faq" class="section faq-section">
+        <div class="section-head">
+          <p class="eyebrow">Häufige Fragen</p>
+          <h2>Was Makler wissen wollen.</h2>
+        </div>
+
+        <div class="faq-list">
+          <details open>
+            <summary>Was passiert mit den Daten meiner Inserate und Kunden?</summary>
+            <p>Daten werden in der EU verarbeitet. Personenbezogene Daten werden vor externer KI-Verarbeitung anonymisiert, soweit sie für die Analyse nicht gebraucht werden.</p>
+          </details>
+          <details>
+            <summary>Mit welchen Portalen funktioniert AREA?</summary>
+            <p>Der Prototyp zeigt den willhaben-Workflow. Die Produktidee ist aber portaloffen: URL rein, Exposé raus, Pflichtangaben geprüft.</p>
+          </details>
+          <details>
+            <summary>Wie genau ist die KI? Kann ich mich darauf verlassen?</summary>
+            <p>AREA ersetzt keine finale Rechtsberatung. Es markiert Risiken, Pflichtlücken und Widersprüche, damit du gezielt prüfen und korrigieren kannst.</p>
+          </details>
+          <details>
+            <summary>Kann ich monatlich kündigen?</summary>
+            <p>Ja. Die Pakete sind für planbares Makler-Volumen gedacht und monatlich kündbar.</p>
+          </details>
+          <details>
+            <summary>Was unterscheidet AREA von allgemeinen KI-Tools?</summary>
+            <p>AREA ist kein Chatfenster. Es ist auf österreichische Immobilien-Exposés, Pflichtangaben, Wiener Marktdaten und verkaufsfertige Reports zugeschnitten.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="conversion-band" aria-label="Demo Einladung">
+        <div>
+          <h2>Bereit, deine Lücken zu finden?</h2>
+          <div class="conversion-actions">
+            <a class="button pale" href="#demo">Demo vereinbaren</a>
+            <a class="button outline" href="#pricing">Pricing ansehen</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="demo" class="section demo-section">
+        <div class="section-head">
+          <p class="eyebrow">Demo vereinbaren</p>
+          <h2>Demo vereinbaren</h2>
+          <p>Hinterlasse deine Daten - wir melden uns innerhalb von 24 Stunden mit Terminvorschlägen.</p>
+        </div>
+
+        <form class="demo-form" data-demo-form>
+          <label>
+            <span>Vor- und Nachname</span>
+            <input name="name" autocomplete="name" required />
+          </label>
+          <label>
+            <span>Maklerbüro / Firma</span>
+            <input name="company" autocomplete="organization" required />
+          </label>
+          <label>
+            <span>E-Mail-Adresse</span>
+            <input name="email" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            <span>Telefonnummer (optional)</span>
+            <input name="phone" autocomplete="tel" />
+          </label>
+          <label>
+            <span>Nachricht (optional)</span>
+            <textarea name="message" rows="4"></textarea>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" required />
+            <span>Ich habe die Datenschutzerklärung gelesen und stimme der Verarbeitung meiner Daten zur Kontaktaufnahme zu.</span>
+          </label>
+          <button class="button dark" type="submit">Anfrage senden</button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid-bg"></div>
+      <div class="footer-inner">
+        <section class="footer-brand" aria-label="AREA">
+          <a class="footer-logo" href="#landing">AREA</a>
+          <p>Automated Real Estate Analyst - gebaut in Wien für den österreichischen Markt.</p>
+        </section>
+
+        <nav class="footer-column" aria-label="Produkt">
+          <p>Produkt</p>
+          <a href="#flow">Wie es funktioniert</a>
+          <a href="#pricing">Preise</a>
+          <a href="#demo">Demo vereinbaren</a>
+        </nav>
+
+        <nav class="footer-column" aria-label="Rechtliches">
+          <p>Rechtliches</p>
+          <a href="#">Impressum</a>
+          <a href="#">Datenschutzerklärung</a>
+          <a href="#">AGB</a>
+          <a href="#">Cookie-Einstellungen</a>
+        </nav>
+
+        <nav class="footer-column" aria-label="Kontakt">
+          <p>Kontakt</p>
+          <a class="todo-pill" href="mailto:amuj71@icloud.com">amuj71@icloud.com</a>
+          <a href="#demo">Demo vereinbaren</a>
+        </nav>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 AREA -</span>
+        <span class="todo-pill">Amar Mujanovic</span>
+        <span>ALLE RECHTE VORBEHALTEN.</span>
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

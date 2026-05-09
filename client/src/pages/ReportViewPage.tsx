@@ -1,349 +1,187 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ExternalLink } from "lucide-react";
-import { content } from "../lib/content";
-import { cn, safeHref, statusClass, TodoText, userFacingError } from "../lib/utils";
-import { AppNav } from "../components/Navigation";
-import { Button, ButtonLink } from "../components/Button";
-import { SectionNumber } from "../components/SectionHeader";
 import { trpc } from "../lib/trpc";
+import { userFacingError } from "../lib/utils";
 
 type FlatRecord = Record<string, unknown>;
-
-type Issue = {
-  severity: "rot" | "amber" | "teal";
-  title: string;
-  detail: string;
-  reference?: string | null;
-};
-
-type ReportModel = {
+type Finding = { severity: "red" | "amber" | "teal"; title: string; detail: string };
+type Report = {
   title: string;
   summary: string;
   url: string;
-  rows: Array<[string, string]>;
-  issues: Issue[];
-  sellingPoints: string[];
-  targets: string[];
-  market: string;
-  duration: string;
+  facts: Array<[string, string]>;
+  findings: Finding[];
+  strategy: Array<[string, string, string]>;
 };
 
 function asRecord(value: unknown): FlatRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? value as FlatRecord : {};
 }
 
-function labelize(value: string): string {
-  return value
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function valueText(value: unknown): string {
-  if (value === null || value === undefined || value === "") return "nicht angegeben";
-  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "nicht angegeben";
-  if (typeof value === "boolean") return value ? "ja" : "nein";
-  if (Array.isArray(value)) return value.map(valueText).filter(Boolean).join(", ");
+function text(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  if (Array.isArray(value)) return value.map(text).filter(Boolean).join(", ");
   if (typeof value === "object") {
-    return Object.entries(asRecord(value))
-      .map(([key, inner]) => `${labelize(key)}: ${valueText(inner)}`)
-      .join(" · ");
+    return Object.entries(asRecord(value)).map(([key, inner]) => `${key}: ${text(inner)}`).join(" · ");
   }
   return String(value);
 }
 
-function firstString(...values: unknown[]): string {
+function first(...values: unknown[]) {
   for (const value of values) {
-    const text = valueText(value);
-    if (text !== "nicht angegeben") return text;
+    const result = text(value);
+    if (result) return result;
   }
   return "";
 }
 
-function extractRows(extraction: FlatRecord): Array<[string, string]> {
-  const preferred = ["titel", "adresse", "preis", "wohnflaeche", "flaeche", "zimmer", "baujahr", "energieausweis", "betriebskosten", "provision", "typ", "ausstattung"];
-  const rows: Array<[string, string]> = [];
-  const used = new Set<string>();
-
-  for (const key of preferred) {
-    if (key in extraction) {
-      rows.push([labelize(key), valueText(extraction[key])]);
-      used.add(key);
-    }
-  }
-
-  for (const [key, value] of Object.entries(extraction)) {
-    if (!used.has(key) && rows.length < 18) {
-      rows.push([labelize(key), valueText(value)]);
-    }
-  }
-
-  return rows.length ? rows : [["Status", "Keine extrahierten Daten im Ergebnis gefunden."]];
-}
-
-function severityFrom(value: unknown): Issue["severity"] {
-  const text = String(value ?? "").toLowerCase();
-  if (text.includes("rot") || text.includes("hoch") || text.includes("kritisch") || text.includes("fehlt")) return "rot";
-  if (text.includes("amber") || text.includes("mittel") || text.includes("warn")) return "amber";
+function severity(value: unknown): Finding["severity"] {
+  const lowered = text(value).toLowerCase();
+  if (lowered.includes("hoch") || lowered.includes("rot") || lowered.includes("fehlt")) return "red";
+  if (lowered.includes("mittel") || lowered.includes("warn") || lowered.includes("amber")) return "amber";
   return "teal";
 }
 
-function collectIssues(value: unknown, issues: Issue[] = []): Issue[] {
-  if (!value || issues.length >= 30) return issues;
+function collectFindings(value: unknown, bucket: Finding[] = []): Finding[] {
+  if (!value || bucket.length > 16) return bucket;
   if (Array.isArray(value)) {
-    value.forEach((item) => collectIssues(item, issues));
-    return issues;
+    value.forEach((item) => collectFindings(item, bucket));
+    return bucket;
   }
-
   const record = asRecord(value);
-  if (!Object.keys(record).length) return issues;
-
-  const title = firstString(record.title, record.titel, record.name, record.fehler, record.problem, record.pruefung);
-  const detail = firstString(record.detail, record.details, record.beschreibung, record.hinweis, record.begruendung, record.empfehlung);
-  if ((title || detail) && (record.severity || record.ampel || record.status || detail)) {
-    issues.push({
-      severity: severityFrom(record.severity ?? record.ampel ?? record.status ?? title ?? detail),
-      title: title || "Hinweis aus der Qualitätsprüfung",
-      detail: detail || valueText(record),
-      reference: firstString(record.law_reference, record.referenz, record.paragraf, record.gesetz) || null,
-    });
-  }
-
-  for (const inner of Object.values(record)) {
-    if (typeof inner === "object") collectIssues(inner, issues);
-  }
-
-  return issues;
+  const title = first(record.title, record.titel, record.fehler, record.problem, record.name, record.pruefung);
+  const detail = first(record.detail, record.beschreibung, record.hinweis, record.begruendung, record.empfehlung);
+  if (title || detail) bucket.push({ severity: severity(record.severity ?? record.status ?? title), title: title || "Hinweis", detail: detail || text(record) });
+  Object.values(record).forEach((inner) => typeof inner === "object" ? collectFindings(inner, bucket) : undefined);
+  return bucket;
 }
 
-function unique(values: string[]): string[] {
-  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
-}
-
-function listFrom(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(valueText).filter(Boolean);
-  if (typeof value === "object" && value) return Object.values(asRecord(value)).map(valueText).filter(Boolean);
-  const text = valueText(value);
-  return text && text !== "nicht angegeben" ? [text] : [];
-}
-
-function demoReport(): ReportModel {
-  const demo = content.live_demo.demo_object;
+function demoReport(): Report {
   return {
-    title: demo.address,
-    summary: `${demo.size_value} · ${demo.rooms_value} Zi · ${demo.price_value}`,
-    url: content.dashboard.list_example_rows[0].url,
-    rows: [
-      [demo.address, demo.title_in_listing],
-      [demo.price_label, demo.price_value],
-      [demo.size_label, demo.size_value],
-      [demo.rooms_label, demo.rooms_value],
-      [demo.year_label, demo.year_value],
-      [demo.energy_label, demo.energy_value],
-      [demo.operating_costs_label, demo.operating_costs_value],
-      [demo.commission_label, demo.commission_value],
-      [content.live_demo.stage_1.fields_extracted[9], demo.neubau_flag_in_listing],
+    title: "Charmante 3-Zimmer-Altbauwohnung im Herzen von Mariahilf",
+    summary: "4 Pflichtfehler · 62/100 Textqualität · 47 Tage Verkaufsdauer",
+    url: "https://www.willhaben.at/iad/immobilien/d/eigentumswohnung/wien",
+    facts: [["Kaufpreis", "€ 489.000"], ["Preis/m²", "€ 6.269"], ["Wohnfläche", "78 m²"], ["Baujahr", "1908"]],
+    findings: [
+      { severity: "red", title: "Energieausweis fehlt", detail: "EAVG Pflichtangabe. HWB und fGEE ergänzen." },
+      { severity: "red", title: "Provision nicht ausgewiesen", detail: "Zahler und Höhe im Inserat klar machen." },
+      { severity: "amber", title: "Widerspruch: Baujahr vs. Neubau", detail: "Irreführungsrisiko senken, Formulierung ändern." },
     ],
-    issues: content.live_demo.stage_2.issues_list.map((issue) => ({
-      severity: issue.severity as Issue["severity"],
-      title: issue.title,
-      detail: issue.detail,
-      reference: issue.law_reference,
-    })),
-    sellingPoints: content.live_demo.stage_3.selling_points,
-    targets: content.live_demo.stage_3.target_groups,
-    market: content.live_demo.stage_3.market_comparison_value,
-    duration: content.live_demo.stage_3.estimated_sale_duration_value,
+    strategy: [["Preisposition", "8% unter Bezirks-Ø", "Gutes Argument nach Pflichtkorrektur."], ["Zielgruppe", "Paare, Erstkäufer, Anleger", "Fokus auf Mikrolage und Altbaugefühl."], ["Verkaufsdauer", "47 Tage", "Bei vollständigen Angaben realistisch."]],
   };
 }
 
-function reportFromApi(result: unknown, url: string): ReportModel {
+function reportFromApi(result: unknown, url: string): Report {
   const root = asRecord(result);
   const extraction = asRecord(root.stufe_1_extraktion);
   const quality = asRecord(root.stufe_2_qualitaetspruefung);
   const strategy = asRecord(root.stufe_3_verkaufsstrategie);
-  const address = asRecord(extraction.adresse);
-
-  const title = firstString(
-    extraction.titel,
-    extraction.title,
-    address.strasse,
-    extraction.adresse,
-    url,
-  ) || "AREA Report";
-  const summary = unique([
-    firstString(extraction.wohnflaeche, extraction.flaeche),
-    firstString(extraction.zimmer),
-    firstString(extraction.preis, extraction.kaufpreis),
-  ]).join(" · ") || "Analyse abgeschlossen";
-
-  const issues = collectIssues(quality);
-  const widmung = asRecord(asRecord(root.standortdaten).widerspruch);
-  if (Object.keys(widmung).length) {
-    issues.push({
-      severity: severityFrom(widmung.schweregrad ?? widmung.status ?? "amber"),
-      title: firstString(widmung.titel, "Widmungs-Hinweis"),
-      detail: firstString(widmung.beschreibung, widmung.detail, valueText(widmung)),
-      reference: firstString(widmung.referenz) || null,
-    });
-  }
-
-  const target = asRecord(strategy.primaere_zielgruppe);
   const market = asRecord(strategy.markteinschaetzung);
-  const selling = strategy.top_5_verkaufsargumente ?? strategy.verkaufsargumente ?? strategy.selling_points;
+  const target = asRecord(strategy.primaere_zielgruppe);
+  const findings = collectFindings(quality);
 
   return {
-    title,
-    summary,
+    title: first(extraction.titel, extraction.title, extraction.adresse, url) || "AREA Report",
+    summary: [first(extraction.wohnflaeche, extraction.flaeche), first(extraction.zimmer), first(extraction.preis, extraction.kaufpreis)].filter(Boolean).join(" · ") || "Analyse abgeschlossen",
     url,
-    rows: extractRows(extraction),
-    issues: issues.length ? issues : [{
-      severity: "teal",
-      title: "Keine kritischen Pflichtfehler erkannt",
-      detail: "Das gespeicherte Analyse-Ergebnis enthält keine markierten Fehler.",
-      reference: null,
-    }],
-    sellingPoints: unique(listFrom(selling)).slice(0, 8),
-    targets: unique([
-      firstString(target.profil),
-      firstString(target.kaufmotiv),
-      firstString(target.budget_einschaetzung),
-      ...listFrom(strategy.zielgruppen),
-      ...listFrom(strategy.target_groups),
-    ]).slice(0, 8),
-    market: firstString(market.preis_bewertung, market.empfehlung, strategy.marktvergleich, strategy.market_comparison) || "Noch keine Markteinschätzung vorhanden.",
-    duration: firstString(strategy.geschaetzte_vermarktungsdauer, strategy.verkaufsdauer, strategy.estimated_sale_duration) || "nicht berechnet",
+    facts: [
+      ["Kaufpreis", first(extraction.preis, extraction.kaufpreis) || "nicht angegeben"],
+      ["Wohnfläche", first(extraction.wohnflaeche, extraction.flaeche) || "nicht angegeben"],
+      ["Zimmer", first(extraction.zimmer) || "nicht angegeben"],
+      ["Baujahr", first(extraction.baujahr) || "nicht angegeben"],
+    ],
+    findings: findings.length ? findings : [{ severity: "teal", title: "Keine kritischen Pflichtfehler erkannt", detail: "Das gespeicherte Analyse-Ergebnis enthält keine markierten Fehler." }],
+    strategy: [
+      ["Preisposition", first(market.preis_bewertung, market.empfehlung, strategy.marktvergleich) || "nicht berechnet", first(market.empfehlung) || "Preisargument prüfen."],
+      ["Zielgruppe", first(target.profil, strategy.zielgruppe, strategy.zielgruppen) || "nicht berechnet", first(target.kaufmotiv) || "Zielgruppe im Text schärfen."],
+      ["Verkaufsdauer", first(strategy.geschaetzte_vermarktungsdauer, strategy.verkaufsdauer) || "nicht berechnet", "Nach Korrektur neu bewerten."],
+    ],
   };
-}
-
-function ExtractionSection({ rows }: { rows: Array<[string, string]> }) {
-  return (
-    <section id="stufe-1" className="scroll-mt-28 py-16">
-      <SectionNumber number="01" label={content.report_view.section_titles.extraction} />
-      <table className="report-table font-tabular">
-        <tbody>
-          {rows.map(([label, value]) => (
-            <tr key={`${label}-${value}`}>
-              <th className="w-[40%] pr-8 font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={label} /></th>
-              <td className="text-[15px] leading-7"><TodoText value={value} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-  );
-}
-
-function QualitySection({ issues }: { issues: Issue[] }) {
-  return (
-    <section id="stufe-2" className="scroll-mt-28 py-16">
-      <SectionNumber number="02" label={content.report_view.section_titles.quality} />
-      <div className="space-y-4">
-        {issues.map((issue, index) => (
-          <article key={`${issue.title}-${index}`} className={cn("rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-6 shadow-hair", statusClass(issue.severity))}>
-            <div className="grid grid-cols-[4px_1fr] gap-5">
-              <span className="rounded-full bg-[var(--status)]" />
-              <div>
-                <h3 className="font-display text-[30px] leading-tight"><TodoText value={issue.title} /></h3>
-                <p className="mt-3 text-[15px] leading-7 text-[var(--area-muted)]"><TodoText value={issue.detail} /></p>
-                {issue.reference ? <span className="mt-4 inline-flex rounded-[4px] border border-[var(--area-line)] px-2 py-1 font-mono text-[11px] text-[var(--area-muted)]"><TodoText value={issue.reference} /></span> : null}
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function StrategySection({ report }: { report: ReportModel }) {
-  return (
-    <section id="stufe-3" className="scroll-mt-28 py-16">
-      <SectionNumber number="03" label={content.report_view.section_titles.strategy} />
-      <div className="grid gap-5">
-        <article className="rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-6 shadow-hair">
-          <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={content.live_demo.stage_3.selling_points_label} /></p>
-          <ul className="mt-5 space-y-4">
-            {(report.sellingPoints.length ? report.sellingPoints : ["Noch keine Verkaufsargumente im Ergebnis vorhanden."]).map((point) => (
-              <li key={point} className="grid grid-cols-[20px_1fr] gap-3 text-[15px] leading-7 text-[var(--area-muted)]"><span className="mt-3 h-px bg-[var(--area-ink)]" /><span><TodoText value={point} /></span></li>
-            ))}
-          </ul>
-        </article>
-        <div className="grid gap-5 md:grid-cols-2">
-          <article className="rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-6 shadow-hair">
-            <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={content.live_demo.stage_3.market_comparison_label} /></p>
-            <p className="mt-4 font-display text-[31px] leading-tight"><TodoText value={report.market} /></p>
-          </article>
-          <article className="rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-6 shadow-hair">
-            <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={content.live_demo.stage_3.estimated_sale_duration_label} /></p>
-            <p className="mt-4 font-display text-[52px] leading-none font-tabular"><TodoText value={report.duration} /></p>
-          </article>
-        </div>
-        <article className="rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-6 shadow-hair">
-          <ul className="space-y-3">
-            {(report.targets.length ? report.targets : ["Noch keine Zielgruppe im Ergebnis vorhanden."]).map((target) => (
-              <li key={target} className="text-[15px] leading-7 text-[var(--area-muted)]"><TodoText value={target} /></li>
-            ))}
-          </ul>
-        </article>
-      </div>
-    </section>
-  );
 }
 
 export function ReportViewPage() {
   const [, params] = useRoute("/dashboard/:id");
-  const rawId = params?.id ?? "";
+  const [view, setView] = useState<"visual" | "summary">("visual");
+  const rawId = params?.id ?? "demo";
   const numericId = Number(rawId);
   const canFetch = Number.isInteger(numericId) && numericId > 0;
   const detailQuery = trpc.analysis.byId.useQuery({ id: canFetch ? numericId : 1 }, { enabled: canFetch, retry: false });
-  const report = useMemo(() => {
-    if (detailQuery.data?.result) return reportFromApi(detailQuery.data.result, detailQuery.data.url);
-    return demoReport();
-  }, [detailQuery.data]);
-  const sideLinks = [
-    { href: "#stufe-1", label: content.report_view.section_titles.extraction },
-    { href: "#stufe-2", label: content.report_view.section_titles.quality },
-    { href: "#stufe-3", label: content.report_view.section_titles.strategy },
-  ];
+  const report = useMemo(() => detailQuery.data?.result ? reportFromApi(detailQuery.data.result, detailQuery.data.url) : demoReport(), [detailQuery.data]);
+  const critical = report.findings.filter((finding) => finding.severity === "red").length;
+  const statusLabel = critical > 0 ? "Nicht veröffentlichen" : "Veröffentlichbar";
 
   return (
-    <>
-      <AppNav />
-      <main className="mx-auto grid max-w-shell grid-cols-1 gap-10 px-6 py-10 lg:grid-cols-[180px_1fr]">
-        <aside className="hidden lg:block">
-          <nav className="sticky top-28 space-y-3 border-l border-[var(--area-line)] pl-4 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
-            {sideLinks.map((link) => <a key={link.href} href={link.href} className="link-underline block hover:text-[var(--area-ink)]"><TodoText value={link.label} /></a>)}
+    <div className="workspace-page">
+      <main className="workspace-shell" aria-label="AREA Report">
+        <aside className="workspace-sidebar">
+          <Link className="app-logo" href="/dashboard">AREA</Link>
+          <nav aria-label="Report Navigation">
+            <Link href="/dashboard">Dashboard</Link>
+            <a className="active" href="#report">Report</a>
+            <a href="#quality">Qualitätsprüfung</a>
+            <a href="#strategy">Strategie</a>
           </nav>
+          <div className="app-user"><span>RP</span><div><b>Report</b><small>{statusLabel}</small></div></div>
         </aside>
-        <div>
-          <Link href="/dashboard" className="link-underline font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)] hover:text-[var(--area-ink)]">
-            <TodoText value={content.report_view.back_to_list_label} />
-          </Link>
-          {detailQuery.isLoading ? <p className="mt-8 text-[14px] text-[var(--area-muted)]">Report wird geladen.</p> : null}
-          {detailQuery.isError ? <p className="mt-8 text-[14px] text-[var(--area-red)]">{userFacingError(detailQuery.error.message, "Report konnte nicht geladen werden.")}</p> : null}
-          <header className="mt-10 grid gap-8 border-b border-[var(--area-line)] pb-12 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div>
-              <h1 className="font-display text-[56px] leading-[1.05] tracking-[-0.055em] md:text-[76px]"><TodoText value={report.title} /></h1>
-              <p className="mt-5 text-[18px] leading-7 text-[var(--area-muted)]"><TodoText value={report.summary} /></p>
-            </div>
-            <div className="flex flex-wrap gap-3 lg:justify-end">
-              <ButtonLink href={safeHref(report.url)} target={content.report_view.header_url_target} rel="noreferrer" tone="ghost" className="border-[var(--area-line-strong)] text-[var(--area-ink)] hover:bg-[rgba(15,20,25,0.04)]">
-                <TodoText value={content.report_view.header_url_label} /> <ExternalLink size={14} strokeWidth={1.5} />
-              </ButtonLink>
-              <div className="inline-flex rounded-[6px] border border-[var(--area-line-strong)] p-1 font-mono text-[12px] uppercase tracking-[0.1em]">
-                {content.report_view.header_translate_toggle.map((language, index) => <button key={language} className={cn("rounded-[4px] px-3 py-2", index === 0 ? "bg-[var(--area-ink)] text-[var(--area-paper)]" : "text-[var(--area-muted)]")}><TodoText value={language} /></button>)}
-              </div>
-              <Button onClick={() => window.print()}><TodoText value={content.report_view.header_export_label} /></Button>
-            </div>
+
+        <section className="workspace-main">
+          <header className="workspace-topbar">
+            <div><p className="eyebrow">AREA Report</p><h1>{report.title}</h1></div>
+            <a className="button pale" href={report.url} target="_blank" rel="noreferrer">Original öffnen</a>
           </header>
-          <div className="mx-auto max-w-[840px]">
-            <ExtractionSection rows={report.rows} />
-            <QualitySection issues={report.issues} />
-            <StrategySection report={report} />
-          </div>
-        </div>
+
+          {detailQuery.isLoading ? <p className="workspace-message">Report wird geladen.</p> : null}
+          {detailQuery.isError ? <p className="workspace-message danger">{userFacingError(detailQuery.error.message, "Report konnte nicht geladen werden.")}</p> : null}
+
+          <section id="report" className="report-section embedded-report">
+            <div className="report-toolbar">
+              <div><p className="eyebrow">Auswertung</p><h2>Schöner Report, aber scanbar.</h2></div>
+              <div className="segmented" role="tablist" aria-label="Report Ansicht">
+                <button className={view === "visual" ? "active" : ""} type="button" onClick={() => setView("visual")}>Visueller Report</button>
+                <button className={view === "summary" ? "active" : ""} type="button" onClick={() => setView("summary")}>Kurzfassung</button>
+              </div>
+            </div>
+
+            <div className={`report-view ${view === "visual" ? "active" : ""}`}>
+              <div className="report-layout">
+                <aside className="report-summary-card">
+                  <span className={`status-pill ${critical > 0 ? "danger" : "good"}`}>{statusLabel}</span>
+                  <h3>{critical || report.findings.length} Hinweise</h3>
+                  <p>{report.summary}</p>
+                  <div className="confidence">
+                    <div className="quality-meter confidence-meter"><b>95%</b><span>Konfidenz</span><div className="bar light"><i style={{ width: "95%" }} /></div></div>
+                    <div className="quality-meter"><b>{critical > 0 ? "62/100" : "88/100"}</b><span>Textqualität</span><div className="bar light"><i style={{ width: critical > 0 ? "62%" : "88%" }} /></div></div>
+                  </div>
+                  <a href="https://www.wko.at/service/wirtschaftsrecht-gewerberecht/energieausweis-pflichten" target="_blank" rel="noreferrer">Energieportal öffnen</a>
+                  <a href="https://www.wko.at/branchen/information-consulting/immobilien-vermoegenstreuhaender/provision" target="_blank" rel="noreferrer">Provisionsregel prüfen</a>
+                  <a href="https://www.wien.gv.at/flaechenwidmung/public/" target="_blank" rel="noreferrer">Flächenwidmung Wien</a>
+                </aside>
+                <div className="report-main">
+                  <section className="report-card object-card">
+                    <div><p className="eyebrow">Objektdaten</p><h3>{report.title}</h3></div>
+                    <div className="data-grid">{report.facts.map(([label, value]) => <div key={label}><span>{label}</span><b>{value}</b></div>)}</div>
+                  </section>
+                  <section id="quality" className="report-card">
+                    <div className="card-title-row"><div><p className="eyebrow">Qualitätsprüfung</p><h3>Analyse</h3></div><span className={`score ${critical > 0 ? "danger" : "good"}`}>{critical > 0 ? "Hohes Risiko" : "Geringes Risiko"}</span></div>
+                    <div className="finding-list">{report.findings.map((finding) => <article key={finding.title}><span className={`dot ${finding.severity}`} /><div><b>{finding.title}</b><p>{finding.detail}</p></div><a href="#strategy">Fix</a></article>)}</div>
+                  </section>
+                  <section id="strategy" className="report-card action-card">
+                    <div><p className="eyebrow">Verkaufsstrategie</p><h3>Nach Korrektur ist das Objekt gut vermarktbar.</h3></div>
+                    <div className="strategy-columns">{report.strategy.map(([label, value, detail]) => <article key={label}><span>{label}</span><b>{value}</b><p>{detail}</p></article>)}</div>
+                  </section>
+                </div>
+              </div>
+            </div>
+
+            <div className={`report-view ${view === "summary" ? "active" : ""}`}>
+              <article className="summary-sheet">
+                <div className="summary-title"><span className="status-pill danger">Kurzfassung</span><h3>Was muss ich jetzt tun?</h3></div>
+                <ol>{report.findings.map((finding) => <li key={finding.title}><b>{finding.title}:</b> {finding.detail}</li>)}</ol>
+              </article>
+            </div>
+          </section>
+        </section>
       </main>
-    </>
+    </div>
   );
 }

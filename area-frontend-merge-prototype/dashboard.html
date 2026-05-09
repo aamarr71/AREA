@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AREA Dashboard Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="workspace-page">
+    <main class="workspace-shell" aria-label="AREA User Interface">
+      <aside class="workspace-sidebar">
+        <a class="app-logo" href="./dashboard.html">AREA</a>
+        <nav aria-label="User Navigation">
+          <a class="active" href="./dashboard.html">Dashboard</a>
+          <a href="#analysis">Neue Analyse</a>
+          <a href="#reports">Reports</a>
+          <a href="./admin.html">Admin</a>
+        </nav>
+        <div class="app-user">
+          <span>AM</span>
+          <div>
+            <b>Maklerbüro Wien</b>
+            <small>User Workspace</small>
+          </div>
+        </div>
+      </aside>
+
+      <section class="workspace-main">
+        <header class="workspace-topbar">
+          <div>
+            <p class="eyebrow">Dashboard</p>
+            <h1>Heute prüfen, heute veröffentlichen.</h1>
+          </div>
+          <a class="button pale" href="./app.html">Abmelden</a>
+        </header>
+
+        <section class="analysis-workflow" id="analysis">
+          <div>
+            <p class="eyebrow">Neue Analyse</p>
+            <h2>Exposé-URL einreichen</h2>
+          </div>
+          <form class="analysis-input" data-analysis-form>
+            <input value="https://www.willhaben.at/iad/immobilien/d/eigentumswohnung/wien" aria-label="Exposé URL" />
+            <button class="button dark" type="submit">Analyse starten</button>
+          </form>
+          <div class="analysis-status" data-analysis-status>
+            <span></span>
+            <b>Bereit zur Prüfung</b>
+            <small>Nach dem Start läuft die Pipeline und der Report erscheint in der Historie.</small>
+          </div>
+        </section>
+
+        <section class="app-kpis" aria-label="Dashboard Kennzahlen">
+          <article><span>Heute</span><b>12</b><small>Analysen</small></article>
+          <article><span>Kritisch</span><b>3</b><small>vor Veröffentlichung</small></article>
+          <article><span>Offen</span><b>7</b><small>Fixes warten</small></article>
+          <article><span>Fertig</span><b>18</b><small>veröffentlichbar</small></article>
+        </section>
+
+        <section class="workspace-grid">
+          <div class="object-queue" id="reports">
+            <div class="panel-head">
+              <p class="eyebrow">Vergangene Reports</p>
+              <span>Risiko zuerst</span>
+            </div>
+            <article>
+              <b>Mariahilfer Straße 87</b>
+              <span class="risk high">Hoch</span>
+              <p>4 Fehler · Energie, Provision, Neubau-Wording</p>
+              <a href="./index.html#report">Report</a>
+            </article>
+            <article>
+              <b>Margaretenstraße 22</b>
+              <span class="risk medium">Mittel</span>
+              <p>2 Fehler · Betriebskosten, Zielgruppe</p>
+              <a href="./index.html#report">Report</a>
+            </article>
+            <article>
+              <b>Praterstraße 41</b>
+              <span class="risk low">Fertig</span>
+              <p>0 kritische Fehler · veröffentlichbar</p>
+              <a href="./index.html#report">Report</a>
+            </article>
+          </div>
+
+          <aside class="next-actions">
+            <div class="panel-head">
+              <p class="eyebrow">Nächste Aktionen</p>
+            </div>
+            <ol>
+              <li><b>Energie</b><span>HWB/fGEE ergänzen</span></li>
+              <li><b>Provision</b><span>Zahler und Höhe nennen</span></li>
+              <li><b>Text</b><span>Neubau-Charakter ersetzen</span></li>
+            </ol>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <script src="./app.js?v=workspace-split"></script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AREA Login Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="auth-page">
+    <a class="auth-brand" href="./index.html#landing" aria-label="Zur AREA Landingpage">AREA</a>
+    <main class="auth-screen" aria-label="AREA Login">
+      <section class="auth-panel">
+        <div>
+          <p class="eyebrow">Login</p>
+        </div>
+
+        <form class="auth-form" data-login-form>
+          <label>
+            <span>E-Mail</span>
+            <input type="email" placeholder="name@maklerbuero.at" aria-label="E-Mail" autocomplete="email" />
+          </label>
+          <label>
+            <span>Zugangscode</span>
+            <input type="text" placeholder="Zugangscode" aria-label="Zugangscode" autocomplete="off" />
+          </label>
+          <a class="button dark" href="./dashboard.html">Einloggen</a>
+        </form>
+      </section>
+    </main>
+
+    <script src="./app.js?v=workspace-split"></script>
+  </body>
+</html>
