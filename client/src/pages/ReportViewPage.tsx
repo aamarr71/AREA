@@ -18,11 +18,15 @@ function asRecord(value: unknown): FlatRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? value as FlatRecord : {};
 }
 
+function isPrimitive(value: unknown): value is string | number | boolean {
+  return ["string", "number", "boolean"].includes(typeof value);
+}
+
 function text(value: unknown): string {
   if (value === null || value === undefined || value === "") return "";
-  if (Array.isArray(value)) return value.map(text).filter(Boolean).join(", ");
+  if (Array.isArray(value)) return value.filter(isPrimitive).map(text).filter(Boolean).join(", ");
   if (typeof value === "object") {
-    return Object.entries(asRecord(value)).map(([key, inner]) => `${key}: ${text(inner)}`).join(" · ");
+    return "";
   }
   return String(value);
 }
@@ -42,6 +46,67 @@ function severity(value: unknown): Finding["severity"] {
   return "teal";
 }
 
+function findDeep(value: unknown, keys: string[], depth = 0): unknown {
+  if (!value || depth > 5) return undefined;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findDeep(item, keys, depth + 1);
+      if (found !== undefined && found !== null && found !== "") return found;
+    }
+    return undefined;
+  }
+  const record = asRecord(value);
+  for (const key of keys) {
+    if (record[key] !== undefined && record[key] !== null && record[key] !== "") return record[key];
+  }
+  for (const inner of Object.values(record)) {
+    if (typeof inner !== "object") continue;
+    const found = findDeep(inner, keys, depth + 1);
+    if (found !== undefined && found !== null && found !== "") return found;
+  }
+  return undefined;
+}
+
+function numberValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return null;
+  const normalized = value.replace(/\s/g, "").replace(/[^\d,.-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatNumber(value: number, maximumFractionDigits = 0) {
+  return new Intl.NumberFormat("de-AT", { maximumFractionDigits }).format(value);
+}
+
+function formatEuro(value: unknown): string {
+  const number = numberValue(value);
+  if (number === null) return text(value);
+  return `€ ${formatNumber(number)}`;
+}
+
+function formatArea(value: unknown): string {
+  const number = numberValue(value);
+  if (number === null) return text(value);
+  return `${formatNumber(number, number % 1 === 0 ? 0 : 2)} m²`;
+}
+
+function formatPercent(value: unknown): string {
+  const number = numberValue(value);
+  if (number === null) return text(value);
+  return `${formatNumber(number, number % 1 === 0 ? 0 : 2)}%`;
+}
+
+function fact(label: string, value: string, options: { hideZero?: boolean } = {}): [string, string] | null {
+  if (!value || value === "nicht angegeben") return null;
+  if (options.hideZero && /^(€\s*)?0([,.]0+)?(\s*m²|%)?$/.test(value.trim())) return null;
+  return [label, value];
+}
+
+function compactFacts(facts: Array<[string, string] | null>): Array<[string, string]> {
+  return facts.filter((item): item is [string, string] => Boolean(item)).slice(0, 8);
+}
+
 function collectFindings(value: unknown, bucket: Finding[] = []): Finding[] {
   if (!value || bucket.length > 16) return bucket;
   if (Array.isArray(value)) {
@@ -49,8 +114,8 @@ function collectFindings(value: unknown, bucket: Finding[] = []): Finding[] {
     return bucket;
   }
   const record = asRecord(value);
-  const title = first(record.title, record.titel, record.fehler, record.problem, record.name, record.pruefung);
-  const detail = first(record.detail, record.beschreibung, record.hinweis, record.begruendung, record.empfehlung);
+  const title = first(record.title, record.titel, record.fehler, record.problem, record.name, record.pruefung, record.kategorie);
+  const detail = first(record.detail, record.beschreibung, record.hinweis, record.begruendung, record.empfehlung, record.analyse, record.text);
   if (title || detail) bucket.push({ severity: severity(record.severity ?? record.status ?? title), title: title || "Hinweis", detail: detail || text(record) });
   Object.values(record).forEach((inner) => typeof inner === "object" ? collectFindings(inner, bucket) : undefined);
   return bucket;
@@ -79,17 +144,50 @@ function reportFromApi(result: unknown, url: string): Report {
   const market = asRecord(strategy.markteinschaetzung);
   const target = asRecord(strategy.primaere_zielgruppe);
   const findings = collectFindings(quality);
+  const price = findDeep(extraction, ["kaufpreis_euro", "kaufpreis", "preis", "preis_euro"]);
+  const rent = findDeep(extraction, ["miete_euro", "miete", "mietpreis_euro"]);
+  const operatingCosts = findDeep(extraction, ["betriebskosten_euro", "betriebskosten"]);
+  const pricePerSqm = findDeep(extraction, ["preis_pro_m2", "preis_pro_qm", "preis_m2"]);
+  const livingArea = findDeep(extraction, ["wohnflaeche_m2", "wohnfläche_m2", "wohnflaeche", "wohnfläche", "flaeche"]);
+  const usableArea = findDeep(extraction, ["nutzflaeche_m2", "nutzfläche_m2", "nutzflaeche", "nutzfläche"]);
+  const landArea = findDeep(extraction, ["grundflaeche_m2", "grundfläche_m2", "grundflaeche"]);
+  const outsideArea = findDeep(extraction, ["balkon_terrasse_m2", "terrasse_m2", "balkon_m2"]);
+  const gardenArea = findDeep(extraction, ["garten_m2", "garten"]);
+  const rooms = findDeep(extraction, ["gesamt", "zimmer", "anzahl_zimmer"]);
+  const bedrooms = findDeep(extraction, ["schlafzimmer"]);
+  const bathrooms = findDeep(extraction, ["badezimmer"]);
+  const toilets = findDeep(extraction, ["toiletten"]);
+  const year = findDeep(extraction, ["baujahr"]);
+  const provisionPercent = findDeep(extraction, ["provision_prozent"]);
+  const provisionHint = findDeep(extraction, ["provision_hinweis", "provision"]);
+  const title = first(findDeep(extraction, ["titel", "title", "headline"]), findDeep(extraction, ["adresse"]), url) || "AREA Report";
+  const roomsSummary = [
+    numberValue(rooms) ? `${formatNumber(numberValue(rooms) ?? 0)} Zimmer` : text(rooms),
+    numberValue(bedrooms) ? `${formatNumber(numberValue(bedrooms) ?? 0)} Schlafzimmer` : "",
+  ].filter(Boolean).join(" · ");
+  const areaSummary = livingArea ? formatArea(livingArea) : "";
+  const priceSummary = price ? formatEuro(price) : rent ? `${formatEuro(rent)} Miete` : "";
 
   return {
-    title: first(extraction.titel, extraction.title, extraction.adresse, url) || "AREA Report",
-    summary: [first(extraction.wohnflaeche, extraction.flaeche), first(extraction.zimmer), first(extraction.preis, extraction.kaufpreis)].filter(Boolean).join(" · ") || "Analyse abgeschlossen",
+    title,
+    summary: [areaSummary, roomsSummary, priceSummary].filter(Boolean).join(" · ") || "Analyse abgeschlossen",
     url,
-    facts: [
-      ["Kaufpreis", first(extraction.preis, extraction.kaufpreis) || "nicht angegeben"],
-      ["Wohnfläche", first(extraction.wohnflaeche, extraction.flaeche) || "nicht angegeben"],
-      ["Zimmer", first(extraction.zimmer) || "nicht angegeben"],
-      ["Baujahr", first(extraction.baujahr) || "nicht angegeben"],
-    ],
+    facts: compactFacts([
+      fact("Kaufpreis", price ? formatEuro(price) : "", { hideZero: true }),
+      fact("Miete", rent ? formatEuro(rent) : "", { hideZero: true }),
+      fact("Betriebskosten", operatingCosts ? formatEuro(operatingCosts) : "", { hideZero: true }),
+      fact("Preis pro m²", pricePerSqm ? `${formatEuro(pricePerSqm)}/m²` : "", { hideZero: true }),
+      fact("Wohnfläche", livingArea ? formatArea(livingArea) : "", { hideZero: true }),
+      fact("Nutzfläche", usableArea ? formatArea(usableArea) : "", { hideZero: true }),
+      fact("Grundfläche", landArea ? formatArea(landArea) : "", { hideZero: true }),
+      fact("Balkon/Terrasse", outsideArea ? formatArea(outsideArea) : "", { hideZero: true }),
+      fact("Garten", gardenArea ? formatArea(gardenArea) : "", { hideZero: true }),
+      fact("Zimmer", roomsSummary),
+      fact("Badezimmer", bathrooms ? formatNumber(numberValue(bathrooms) ?? 0) : "", { hideZero: true }),
+      fact("Toiletten", toilets ? formatNumber(numberValue(toilets) ?? 0) : "", { hideZero: true }),
+      fact("Baujahr", text(year), { hideZero: true }),
+      fact("Provision", first(provisionHint, provisionPercent ? formatPercent(provisionPercent) : "")),
+    ]),
     findings: findings.length ? findings : [{ severity: "teal", title: "Keine kritischen Pflichtfehler erkannt", detail: "Das gespeicherte Analyse-Ergebnis enthält keine markierten Fehler." }],
     strategy: [
       ["Preisposition", first(market.preis_bewertung, market.empfehlung, strategy.marktvergleich) || "nicht berechnet", first(market.empfehlung) || "Preisargument prüfen."],
