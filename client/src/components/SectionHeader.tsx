@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '../lib/area-utils';
-import { TodoText } from '../lib/area-utils';
+import { cn } from '../lib/utils';
+import { TodoText } from '../lib/utils';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 

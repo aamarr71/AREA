@@ -1,4 +1,4 @@
-import { cn } from "@/lib/area-utils";
+import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 

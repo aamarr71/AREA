@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { ChevronDown } from 'lucide-react';
 import { content } from '../lib/content';
-import { cn, safeHref, TodoText } from '../lib/area-utils';
+import { cn, safeHref, TodoText } from '../lib/utils';
 import { ButtonLink } from './Button';
 
 export function LandingNav() {
@@ -47,14 +47,16 @@ export function LandingNav() {
   );
 }
 
-export function AppNav({ admin = false }: { admin?: boolean }) {
+export function AppNav({ admin = false, onLogout }: { admin?: boolean; onLogout?: () => void }) {
   return (
     <>
       {admin ? (
         <div className="h-10 border-b border-white/10 bg-[var(--area-ink)] text-[var(--area-paper)]">
           <div className="mx-auto flex h-full max-w-none items-center justify-between px-6 font-mono text-[12px] uppercase tracking-[0.1em]">
             <span><TodoText value={content.admin_dashboard.header_label} /></span>
-            <Link href="/login" className="transition-opacity hover:opacity-70"><TodoText value={content.admin_dashboard.logout_label} /></Link>
+            <button type="button" onClick={onLogout} className="transition-opacity hover:opacity-70">
+              <TodoText value={content.admin_dashboard.logout_label} />
+            </button>
           </div>
         </div>
       ) : null}
@@ -66,6 +68,9 @@ export function AppNav({ admin = false }: { admin?: boolean }) {
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)] transition-colors hover:text-[var(--area-ink)]">
               <TodoText value={content.dashboard.page_title} />
+            </Link>
+            <Link href="/amar-stats" className="hidden font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)] transition-colors hover:text-[var(--area-ink)] sm:inline-flex">
+              Admin
             </Link>
             <button className="flex items-center gap-2 rounded-[6px] border border-[var(--area-line)] px-3 py-2 text-[13px] text-[var(--area-muted)] transition-colors hover:bg-[rgba(15,20,25,0.03)] hover:text-[var(--area-ink)]">
               <span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--area-ink)] font-mono text-[11px] text-[var(--area-paper)]"><TodoText value={content.brand.logo_icon_letter} /></span>

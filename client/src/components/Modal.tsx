@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../lib/area-utils';
+import { cn } from '../lib/utils';
 
 type ModalProps = {
   open: boolean;

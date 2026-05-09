@@ -166,28 +166,6 @@
     "market_position_statement": "Die einzige KI-gestützte Exposé-Prüfung speziell für den österreichischen Immobilienmarkt — mit echtem Wissen über EAVG, MaklerG, Wiener Bauordnung und Marktdaten pro Bezirk."
   },
 
-  "problem": {
-    "section_eyebrow": "Das Problem",
-    "section_headline": "Exposés verlieren Vertrauen, lange bevor jemand anruft.",
-    "section_intro": "Fehlende Pflichtangaben, widersprüchliche Eckdaten und generische Texte kosten Tempo. AREA macht diese Brüche sichtbar, bevor sie im Verkaufsgespräch teuer werden.",
-    "points": [
-      "Pflichtangaben sind über Text, Portaldaten und Anhänge verstreut.",
-      "Käuferinnen und Käufer lesen Widersprüche als Unsicherheit.",
-      "Maklerteams verlieren Zeit mit manuellen Checks statt mit Beratung."
-    ]
-  },
-
-  "workflow": {
-    "section_eyebrow": "Workflow",
-    "section_headline": "Von der URL zum Prüfbericht.",
-    "section_intro": "AREA strukturiert den Prozess wie ein internes Research-Desk: Daten erfassen, Risiken prüfen, Verkaufsargumente ausarbeiten.",
-    "steps": [
-      { "label": "01", "title": "Inserat einreichen", "detail": "URL einfügen und Analyse starten." },
-      { "label": "02", "title": "Pflichtchecks lesen", "detail": "Risiken, Lücken und Widersprüche priorisiert prüfen." },
-      { "label": "03", "title": "Report nutzen", "detail": "Befunde, Marktindikatoren und Strategie im Team weiterverwenden." }
-    ]
-  },
-
   "pricing": {
     "section_eyebrow": "Pricing",
     "section_headline": "Preise, die mit dir wachsen.",

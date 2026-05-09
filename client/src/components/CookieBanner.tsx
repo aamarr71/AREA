@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { content } from '../lib/content';
 import { Button } from './Button';
 import { Modal } from './Modal';
-import { cn, safeHref, TodoText } from '../lib/area-utils';
+import { cn, safeHref, TodoText } from '../lib/utils';
 
 const STORAGE_KEY = 'area-cookie-choice';
 
@@ -31,7 +31,7 @@ export function CookieBanner() {
       <AnimatePresence>
         {open ? (
           <motion.div
-            className="fixed bottom-5 left-1/2 z-[70] w-[min(960px,calc(100vw-32px))] -translate-x-1/2 rounded-[8px] border border-[var(--area-line-strong)] bg-[var(--area-surface)] p-5 shadow-hair"
+            className="fixed bottom-5 left-1/2 z-[70] w-[min(960px,calc(100vw-32px))] rounded-[8px] border border-[var(--area-line-strong)] bg-[var(--area-surface)] p-5 shadow-hair"
             initial={{ opacity: 0, y: 32, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 24, x: '-50%' }}

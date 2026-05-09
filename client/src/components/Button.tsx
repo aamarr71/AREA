@@ -1,5 +1,5 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
-import { cn } from '../lib/area-utils';
+import { cn } from '../lib/utils';
 
 type ButtonTone = 'solid' | 'light' | 'ghost' | 'text' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';

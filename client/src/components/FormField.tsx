@@ -1,6 +1,6 @@
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import { cn } from '../lib/area-utils';
-import { TodoText } from '../lib/area-utils';
+import { cn } from '../lib/utils';
+import { TodoText } from '../lib/utils';
 
 type FieldBase = {
   label: string;

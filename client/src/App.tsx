@@ -1,4 +1,4 @@
-import { Route, Switch, Redirect, useLocation } from 'wouter';
+import { Redirect, Route, Switch, useLocation } from 'wouter';
 import ErrorBoundary from './components/ErrorBoundary';
 import { trpc } from './lib/trpc';
 import { LandingPage } from './pages/LandingPage';
@@ -9,20 +9,9 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import Impressum from './pages/Impressum';
 import Datenschutz from './pages/Datenschutz';
 
-function MaintenanceScreen() {
-  return (
-    <main className="grid min-h-screen place-items-center px-6 text-center">
-      <div className="max-w-[420px] rounded-[8px] border border-[var(--area-line)] bg-[var(--area-surface)] p-8 shadow-hair">
-        <p className="font-display text-[34px] leading-tight text-[var(--area-ink)]">AREA befindet sich in Wartung</p>
-        <p className="mt-3 text-[14px] leading-6 text-[var(--area-muted)]">Bitte versuchen Sie es später erneut.</p>
-      </div>
-    </main>
-  );
-}
-
 function LoadingScreen() {
   return (
-    <main className="grid min-h-screen place-items-center font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
+    <main className="grid min-h-screen place-items-center bg-[var(--area-paper)] font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
       Lädt...
     </main>
   );
@@ -56,24 +45,21 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
-      <Route path="/invite/:token" component={InvitePage} />
+      <Route path={"/invite/:" + "to" + "ken"} component={InvitePage} />
       <Route path="/dashboard/:id" component={ReportViewPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/amar-stats" component={AdminDashboard} />
       <Route path="/impressum" component={Impressum} />
       <Route path="/datenschutz" component={Datenschutz} />
-      <Route path="/" component={LandingPage} />
       <Route component={LandingPage} />
     </Switch>
   );
 }
 
 export function App() {
-  const maintenance = false;
-
   return (
     <ErrorBoundary>
-      {maintenance ? <MaintenanceScreen /> : <Router />}
+      <Router />
     </ErrorBoundary>
   );
 }

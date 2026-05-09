@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform, type MotionValue } from 'framer-motion';
 import { ArrowDown, Check, Plus } from 'lucide-react';
 import { content } from '../lib/content';
-import { cn, safeHref, statusClass, TodoText } from '../lib/area-utils';
+import { cn, safeHref, statusClass, TodoText } from '../lib/utils';
 import { LandingNav } from '../components/Navigation';
 import { Button, ButtonLink } from '../components/Button';
 import { Eyebrow, Reveal, SectionHeader, SectionNumber } from '../components/SectionHeader';
@@ -370,49 +370,10 @@ function TrustSection() {
   );
 }
 
-function ProblemSection() {
-  return (
-    <section className="py-[120px] md:py-[180px]">
-      <SectionNumber number="03" label={content.problem.section_eyebrow} />
-      <SectionHeader eyebrow={content.problem.section_eyebrow} headline={content.problem.section_headline} intro={content.problem.section_intro} />
-      <div className="mx-auto mt-16 grid max-w-editorial gap-4 px-6 md:grid-cols-3">
-        {content.problem.points.map((point, index) => (
-          <Reveal key={point} delay={index * 0.05}>
-            <article className="h-full border-t border-[var(--area-line-strong)] pt-6">
-              <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Problem 0{index + 1}</p>
-              <p className="mt-6 text-[20px] leading-8 text-[var(--area-ink)]"><TodoText value={point} /></p>
-            </article>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function WorkflowSection() {
-  return (
-    <section className="py-[120px] md:py-[180px]">
-      <SectionNumber number="04" label={content.workflow.section_eyebrow} />
-      <SectionHeader eyebrow={content.workflow.section_eyebrow} headline={content.workflow.section_headline} intro={content.workflow.section_intro} />
-      <div className="mx-auto mt-16 max-w-editorial px-6">
-        {content.workflow.steps.map((step, index) => (
-          <Reveal key={step.label} delay={index * 0.06}>
-            <article className="grid gap-5 border-t border-[var(--area-line)] py-8 md:grid-cols-[120px_0.8fr_1fr]">
-              <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]"><TodoText value={step.label} /></p>
-              <h3 className="font-display text-[34px] leading-tight"><TodoText value={step.title} /></h3>
-              <p className="text-[16px] leading-8 text-[var(--area-muted)]"><TodoText value={step.detail} /></p>
-            </article>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function PricingSection() {
   return (
     <section id="pricing" className="py-[120px] md:py-[180px]" aria-labelledby="pricing-title">
-      <SectionNumber number="05" label={content.pricing.section_eyebrow} />
+      <SectionNumber number="03" label={content.pricing.section_eyebrow} />
       <SectionHeader eyebrow={content.pricing.section_eyebrow} headline={content.pricing.section_headline} intro={content.pricing.section_intro} />
       <div className="mx-auto mt-16 grid max-w-editorial gap-4 px-6 lg:grid-cols-3">
         {content.pricing.tiers.map((tier, index) => (
@@ -455,7 +416,7 @@ function FaqSection() {
   const [open, setOpen] = useState(0);
   return (
     <section id="faq" className="py-[120px] md:py-[180px]">
-      <SectionNumber number="06" label={content.faq.section_eyebrow} />
+      <SectionNumber number="04" label={content.faq.section_eyebrow} />
       <SectionHeader eyebrow={content.faq.section_eyebrow} headline={content.faq.section_headline} introDropcap={false} />
       <div className="mx-auto mt-16 max-w-editorial px-6">
         {content.faq.items.map((item, index) => {
@@ -585,8 +546,6 @@ export function LandingPage() {
         <Hero />
         <LiveDemoSection />
         <TrustSection />
-        <ProblemSection />
-        <WorkflowSection />
         <PricingSection />
         <FaqSection />
         <FinalCta />
