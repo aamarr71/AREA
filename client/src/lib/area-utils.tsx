@@ -22,6 +22,20 @@ export function safeHref(href?: string): string {
   return href;
 }
 
+export function userFacingError(message: string | undefined, fallback = 'Aktion konnte nicht abgeschlossen werden.'): string {
+  const text = message?.trim();
+  if (!text) return fallback;
+
+  const lowered = text.toLowerCase();
+  const internalHints = ['failed query', 'params:', 'select "', 'insert into', 'update "', 'database', 'connection'];
+
+  if (internalHints.some((hint) => lowered.includes(hint))) {
+    return fallback;
+  }
+
+  return text;
+}
+
 export function TodoText({ value, className }: { value: string | number | null | undefined; className?: string }): ReactNode {
   if (value === null || value === undefined) return null;
   const text = String(value);

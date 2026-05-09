@@ -1,4 +1,4 @@
-import { callContextTool, findRepoRoot, output, readHookInput } from "./lib/context.js";
+import { callContextTool, findRepoRoot, outputAdditionalContext, readHookInput } from "./lib/context.js";
 
 const repoRoot = findRepoRoot();
 const input = readHookInput();
@@ -29,7 +29,7 @@ const search = callContextTool(repoRoot, "context.search", {
   include_sources: true,
 });
 
-output({
+outputAdditionalContext("UserPromptSubmit", {
   area_context_search: {
     task_class: taskClass,
     search,

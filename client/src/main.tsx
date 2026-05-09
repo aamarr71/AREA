@@ -1,3 +1,4 @@
+import "@vitejs/plugin-react/preamble";
 import { trpc } from "@/lib/trpc";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
@@ -10,13 +11,13 @@ const queryClient = new QueryClient();
 
 queryClient.getQueryCache().subscribe((event) => {
   if (event.type === "updated" && event.action.type === "error") {
-    console.error("[API Query Error]", event.query.state.error);
+    console.error("[API Query Error] Request failed");
   }
 });
 
 queryClient.getMutationCache().subscribe((event) => {
   if (event.type === "updated" && event.action.type === "error") {
-    console.error("[API Mutation Error]", event.mutation.state.error);
+    console.error("[API Mutation Error] Request failed");
   }
 });
 

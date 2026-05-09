@@ -1,4 +1,4 @@
-import { callContextTool, findRepoRoot, output } from "./lib/context.js";
+import { callContextTool, findRepoRoot, outputAdditionalContext } from "./lib/context.js";
 
 const repoRoot = findRepoRoot();
 const health = callContextTool(repoRoot, "context.healthcheck", {});
@@ -14,7 +14,7 @@ const sessionSummaries = callContextTool(repoRoot, "context.search", {
   include_sources: true,
 });
 
-output({
+outputAdditionalContext("SessionStart", {
   area_context: {
     health,
     brief,

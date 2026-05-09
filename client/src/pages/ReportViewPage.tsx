@@ -2,9 +2,8 @@ import { useMemo } from 'react';
 import { Link, useRoute } from 'wouter';
 import { ExternalLink } from 'lucide-react';
 import { content } from '../lib/content';
-import { cn, objectSummaryFromDemo, safeHref, statusClass, TodoText } from '../lib/area-utils';
+import { cn, objectSummaryFromDemo, safeHref, statusClass, TodoText, userFacingError } from '../lib/area-utils';
 import { trpc } from '../lib/trpc';
-import { AppNav } from '../components/Navigation';
 import { Button, ButtonLink } from '../components/Button';
 import { SectionNumber } from '../components/SectionHeader';
 
@@ -249,20 +248,28 @@ export function ReportViewPage() {
   ];
 
   return (
-    <>
-      <AppNav />
-      <main className="mx-auto grid max-w-shell grid-cols-1 gap-10 px-6 py-10 lg:grid-cols-[180px_1fr]">
-        <aside className="hidden lg:block">
-          <nav className="sticky top-28 space-y-3 border-l border-[var(--area-line)] pl-4 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--area-muted)]">
-            {sideLinks.map((link) => <a key={link.href} href={link.href} className="link-underline block hover:text-[var(--area-ink)]"><TodoText value={link.label} /></a>)}
-          </nav>
-        </aside>
+    <main className="workspace-shell" aria-label="AREA Report">
+      <aside className="workspace-sidebar">
+        <Link className="app-logo" href="/dashboard">AREA</Link>
+        <nav aria-label="Report Navigation">
+          <Link href="/dashboard">Dashboard</Link>
+          {sideLinks.map((link) => <a key={link.href} href={link.href}>{link.label}</a>)}
+        </nav>
+        <div className="app-user">
+          <span>RP</span>
+          <div>
+            <b>Report</b>
+            <small>Analyseansicht</small>
+          </div>
+        </div>
+      </aside>
+      <section className="workspace-main report-workspace">
         <div>
           <Link href="/dashboard" className="link-underline font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)] hover:text-[var(--area-ink)]">
             <TodoText value={content.report_view.back_to_list_label} />
           </Link>
           {detailQuery.isLoading ? <p className="mt-8 font-mono text-[12px] uppercase tracking-[0.1em] text-[var(--area-muted)]">Report wird geladen...</p> : null}
-          {detailQuery.error ? <p className="mt-8 text-[14px] text-[var(--area-red)]">{detailQuery.error.message}</p> : null}
+          {detailQuery.error ? <p className="mt-8 text-[14px] text-[var(--area-red)]">{userFacingError(detailQuery.error.message, 'Report konnte gerade nicht geladen werden.')}</p> : null}
           <header className="mt-10 grid gap-8 border-b border-[var(--area-line)] pb-12 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <h1 className="font-display text-[56px] leading-[1.05] tracking-[-0.055em] md:text-[76px]"><TodoText value={report.title} /></h1>
@@ -284,7 +291,7 @@ export function ReportViewPage() {
             <StrategySection report={report} />
           </div>
         </div>
-      </main>
-    </>
+      </section>
+    </main>
   );
 }

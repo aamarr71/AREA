@@ -1,4 +1,4 @@
-import { output, readHookInput } from "./lib/context.js";
+import { readHookInput } from "./lib/context.js";
 
 const input = readHookInput();
 const text = JSON.stringify(input);
@@ -13,12 +13,11 @@ if (/(api[_-]?key|authorization|bearer\s+[a-z0-9._-]+|password|secret|token)/i.t
   blocks.push("Possible secret or credential material detected in tool input.");
 }
 
-output({
-  area_tool_policy: {
-    allow: blocks.length === 0,
-    warnings,
-    blocks,
-  },
-});
+if (blocks.length > 0) {
+  console.error(blocks.join("\n"));
+  process.exit(2);
+}
 
-if (blocks.length > 0) process.exit(2);
+if (warnings.length > 0) {
+  console.log(JSON.stringify({ systemMessage: warnings.join("\n") }, null, 2));
+}

@@ -45,3 +45,19 @@ export function callContextTool(repoRoot, name, input) {
 export function output(payload) {
   console.log(JSON.stringify(payload, null, 2));
 }
+
+export function outputAdditionalContext(hookEventName, payload) {
+  console.log(
+    JSON.stringify(
+      {
+        continue: true,
+        hookSpecificOutput: {
+          hookEventName,
+          additionalContext: JSON.stringify(payload, null, 2),
+        },
+      },
+      null,
+      2,
+    ),
+  );
+}
